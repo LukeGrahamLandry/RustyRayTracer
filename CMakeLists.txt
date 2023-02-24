@@ -1,0 +1,9 @@
+cmake_minimum_required(VERSION 3.24)
+project(raytracer)
+
+set(CMAKE_CXX_STANDARD 14)
+
+include_directories(src)
+
+add_executable(raytracer
+        src/Tuple.cc src/Tuple.h src/Colour.h src/Colour.cc src/Canvas.h src/Canvas.cc src/main.cc src/common.h src/Matrix.h src/Matrix.cc)

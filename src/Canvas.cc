@@ -1,7 +1,3 @@
-//
-// Created by Luke Graham Landry on 2023-02-23.
-//
-
 #include <fstream>
 #include "Canvas.h"
 

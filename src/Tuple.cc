@@ -40,7 +40,7 @@ Tuple Tuple::negate() const {
     if (isPoint()) error() << "One does not simply negate a point." << endl;
 #endif
 
-    return Tuple(-x(), -y(), -z(), w());
+    return Tuple(-x(), -y(), -z(), -w());
 }
 
 Tuple Tuple::scale(float s) const {

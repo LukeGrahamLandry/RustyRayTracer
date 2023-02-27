@@ -1,10 +1,15 @@
-# The Ray Tracer Challenge 
+# Ray Tracer
 
 ## Features
+
+**The Ray Tracer Challenge Book**
 
 - Tuples: points, vectors, colours
 - Canvas: draw pixels to image file (.ppm)
 - Matrix Transformations: translate, scale, rotate about x/y/z axis, shear 
+
+**Additions**
+
 - Parser that generates c++ from the dialect of gherkin used for test specs in The Ray Tracer Challenge 
 
 ## Stuff to fix
@@ -35,8 +40,6 @@ Should make a nice website for all of these. Seems like a perfect application fo
 
 ## Stuff to extend
 
-- transpile the test specs into c++
-  - better to use lye and compile to lye but i don't feel like finishing that right now so just use python for compiler 
 - compile the yml image specs from book 
 - think about what nicer interfaces to use for the lye api
   - like the "fluent API" transformation chaining example from book
@@ -53,4 +56,5 @@ Should make a nice website for all of these. Seems like a perfect application fo
   - but I worry about it being slow
     - subset that can compile to c++ by requiring explicit releasing memory 
       - this could extend to always compiling, complex enough to be worth overhead interop, pure functions when building an executable
+- import minecraft structure nbt files 
 - my own implementation of normal image formats

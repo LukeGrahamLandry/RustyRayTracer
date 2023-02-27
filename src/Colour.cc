@@ -13,17 +13,17 @@ Colour::Colour() {
 }
 
 Colour Colour::add(const Colour &other) const {
-    return Colour(red + other.red, blue + other.blue, green + other.green);
+    return Colour(red + other.red, green + other.green, blue + other.blue);
 }
 
 Colour Colour::subtract(const Colour &other) const {
-    return Colour(red - other.red, blue - other.blue, green - other.green);
+    return Colour(red - other.red, green - other.green, blue - other.blue);
 }
 
 Colour Colour::scale(float s) const {
-    return Colour(red * s, blue * s, green * s);
+    return Colour(red * s, green * s, blue * s);
 }
 
 Colour Colour::multiply(const Colour &other) const {
-    return Colour(red * other.red, blue * other.blue, green * other.green);
+    return Colour(red * other.red, green * other.green, blue * other.blue);
 }

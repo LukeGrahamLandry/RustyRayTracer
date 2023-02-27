@@ -23,6 +23,13 @@ public:
     float dot(const Tuple &other) const;
     Tuple cross(const Tuple &other) const;
 
+    bool equals(const Tuple &other) const {
+        for (int i=0;i<4;i++){
+            if (!almostEqual(get(i), other.get(i))) return false;
+        }
+        return true;
+    }
+
     inline void set(int i, float value){
         values[i] = value;
     }

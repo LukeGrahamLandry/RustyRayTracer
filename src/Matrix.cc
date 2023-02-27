@@ -120,6 +120,7 @@ Matrix::Matrix(const Matrix &other) {
             set(r, c, other.get(r, c));
         }
     }
+    size = other.size;
 }
 
 Matrix Transformation::translation(float x, float y, float z) {

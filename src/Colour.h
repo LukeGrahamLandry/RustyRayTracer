@@ -15,6 +15,9 @@ public:
     Colour subtract(const Colour& other) const;
     Colour scale(float s) const;
     Colour multiply(const Colour& other) const;
+    bool equals(const Colour& other) const {
+        return almostEqual(red, other.red) && almostEqual(green, other.green) && almostEqual(blue, other.blue);
+    }
 };
 
 

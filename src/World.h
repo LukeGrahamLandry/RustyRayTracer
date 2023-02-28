@@ -20,6 +20,10 @@ public:
     static World default_world();
 
     void addShape(const Sphere& sphere);
+
+    bool is_shadowed(const Tuple& point, const PointLight &light) const;
+
+    PointLight getLight(int index);
 };
 
 

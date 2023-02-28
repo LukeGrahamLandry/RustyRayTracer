@@ -112,7 +112,9 @@ functions = {
     "color_at": FunctionDef(True, "Colour", "color_at"),
     "ray_for_pixel": FunctionDef(True, "Ray", "ray_for_pixel"),
     "render": FunctionDef(True, "Canvas", "render"),
-    "pixel_at": FunctionDef(True, "Colour", "pixel_at")
+    "pixel_at": FunctionDef(True, "Colour", "pixel_at"),
+    "is_shadowed": FunctionDef(True, "bool", "is_shadowed"),
+    "getLight": FunctionDef(True, "PointLight", "getLight")
 }
 
 transformations = ["translation", "scaling", "rotation_x", "rotation_y", "rotation_z", "shearing", "view_transform"]

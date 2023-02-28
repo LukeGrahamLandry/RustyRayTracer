@@ -14,5 +14,7 @@ void chapter4();
 void chapter5();
 void chapter6();
 void chapter7();
+void test();
+void lights();
 
 #endif

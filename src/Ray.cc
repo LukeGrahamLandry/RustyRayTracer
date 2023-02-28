@@ -104,6 +104,7 @@ Intersection& Intersection::prepare_computations(const Ray &ray) {
     normalv = object->normal_at(point);
     inside = normalv.dot(eyev) < 0;
     if (inside) normalv = normalv.negate();
+    over_point = point.add(normalv.scale(EPSILON()));
     return *this;
 }
 

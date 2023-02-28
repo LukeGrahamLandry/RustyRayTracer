@@ -21,6 +21,8 @@ Colour Material::lighting(const PointLight& light, const Tuple& position, const 
     Colour base_colour = color.multiply(light.intensity);
     Colour ambient_colour = color.scale(ambient);
 
+    if (in_shadow) return ambient_colour;
+
     Tuple light_direction = light.position.subtract(position).normalize();
     float cos_light_to_normal = light_direction.dot(normal_vector);  // Since both are normalized
 

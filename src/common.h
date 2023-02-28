@@ -9,7 +9,7 @@
 using namespace std;
 
 inline float EPSILON(){
-    return 0.0001;
+    return 0.0000001;
 }
 
 inline bool almostEqual(float a, float b) {

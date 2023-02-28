@@ -31,6 +31,7 @@ public:
     Tuple eyev;
     Tuple normalv;
     bool inside;
+    Tuple over_point;
 
     Intersection(float tIn, Sphere& objectIn);
 

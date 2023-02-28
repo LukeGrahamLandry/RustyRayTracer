@@ -38,10 +38,18 @@ Intersections World::intersect(const Ray &ray) const {
     return result;
 }
 
+bool World::is_shadowed(const Tuple& point, const PointLight& light) const {
+    Tuple light_direction = light.position.subtract(point);
+    Ray ray = Ray(point, light_direction.normalize());
+    Intersections hits = intersect(ray);
+    // Make sure the hit is not behind the light.
+    return hits.hasHit() && hits.hit().t < light_direction.magnitude();
+}
+
 Colour World::shade_hit(const Intersection &hit) const {
     Colour total;
     for (PointLight* light : lights){
-        Colour current = hit.object->material.lighting(*light, hit.point, hit.eyev, hit.normalv);
+        Colour current = hit.object->material.lighting(*light, hit.point, hit.eyev, hit.normalv, is_shadowed(hit.over_point, *light));
         total = total.add(current);
     }
     return total;
@@ -49,6 +57,10 @@ Colour World::shade_hit(const Intersection &hit) const {
 
 Sphere World::getShape(int index) {
     return *objects[index];
+}
+
+PointLight World::getLight(int index) {
+    return *lights[index];
 }
 
 Colour World::color_at(const Ray &ray) const {

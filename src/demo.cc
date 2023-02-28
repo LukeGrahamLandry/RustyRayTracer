@@ -183,3 +183,78 @@ void chapter7() {
     cout << "Rendered " << (camera.hsize * camera.vsize) << " pixels in " << (end_time - start_time) << " ms." << endl;
     screen.write_ppm("chapter7.ppm");
 }
+
+
+void test() {
+    Sphere middle;
+    middle.set_transform(Transformation::translation(-0.5, 1, 0.5));
+    middle.material.color = Colour(0.1, 1, 0.5);
+    middle.material.diffuse = 0.7;
+    middle.material.specular = 0.3;
+
+    Sphere right;
+    right.set_transform(Transformation::translation(1.5, 0.5, -0.5).multiply(Transformation::scaling(0.5, 0.5, 0.5)));
+    right.material.color = Colour(0.5, 1, 0.1);
+    right.material.diffuse = 0.7;
+    right.material.specular = 0.3;
+
+    Sphere left;
+    left.set_transform(Transformation::translation(-1.5, 0.33, -0.75).multiply(Transformation::scaling(0.33, 0.33, 0.33)));
+    left.material.color = Colour(1, 0.8, 0.1);
+    left.material.diffuse = 0.7;
+    left.material.specular = 0.3;
+
+
+    Tuple light_pos = Point(-10, 10, -10);
+    light_pos = Transformation::rotation_x(0).multiply(light_pos);
+
+    World world;
+    world.addLight(PointLight(light_pos, Colour(1, 1, 1)));
+
+    world.addShape(middle);
+    world.addShape(right);
+    world.addShape(left);
+
+    int resolution_factor = 2;
+    Camera camera = Camera(100 * resolution_factor, 50 * resolution_factor, M_PI/3);
+    Matrix perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
+
+    for (int i=0;i<16;i++){
+        long start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
+
+        perspective = perspective.multiply(Transformation::rotation_x(1 * M_PI / 16));
+        camera.set_transform(perspective);
+
+        Canvas screen = camera.render(world);
+
+        long end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
+        cout << "Rendered " << (camera.hsize * camera.vsize) << " pixels in " << (end_time - start_time) << " ms." << endl;
+        screen.write_ppm((to_string(i) + "-test.ppm").c_str());
+    }
+}
+
+void lights() {
+    Sphere middle;
+    middle.set_transform(Transformation::translation(-0.5, 1, 0.5));
+    middle.material.color = Colour(1, 1, 1);
+    middle.material.diffuse = 0.7;
+    middle.material.specular = 0.3;
+
+    Tuple light_pos = Point(-10, 10, -10);
+    light_pos = Transformation::rotation_x(0).multiply(light_pos);
+
+    World world;
+    world.addLight(PointLight(light_pos, Colour(1, 0, 0)));
+
+    world.addLight(PointLight(Transformation::translation(20, 0, 0).multiply(light_pos), Colour(0, 0, 1)));
+
+    world.addShape(middle);
+
+    int resolution_factor = 2;
+    Camera camera = Camera(100 * resolution_factor, 50 * resolution_factor, M_PI/3);
+    Matrix perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
+    camera.set_transform(perspective);
+
+    Canvas screen = camera.render(world);
+    screen.write_ppm("lights.ppm");
+}

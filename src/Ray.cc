@@ -15,7 +15,7 @@ Intersections::~Intersections() {
     }
 }
 
-Tuple Ray::position(float t) const {
+Tuple Ray::position(double t) const {
     return origin.add(direction.scale(t));
 }
 
@@ -82,7 +82,7 @@ void Intersections::addAll(const Intersections& hits) {
     }
 }
 
-Intersection::Intersection(float tIn, Sphere &objectIn) {
+Intersection::Intersection(double tIn, Sphere &objectIn) {
     t = tIn;
     object = &objectIn;
 }

@@ -17,7 +17,7 @@ public:
     Tuple multiply(const Tuple& other) const;
     Matrix inverse() const;
     Matrix transpose() const;
-    float determinant() const;
+    double determinant() const;
     bool equals(const Matrix& other) const;
     Matrix submatrix(int row, int col) const;
     void print() const;
@@ -33,8 +33,8 @@ public:
 
     Matrix static fromRows(const Tuple& r1, const Tuple& r2, const Tuple& r3, const Tuple& r4);
 
-    float cofactor(int row, int col) const{
-        return submatrix(row, col).determinant() * ((float) ((row + col) % 2 == 0 ? 1 : -1));
+    double cofactor(int row, int col) const{
+        return submatrix(row, col).determinant() * ((double) ((row + col) % 2 == 0 ? 1 : -1));
     }
     bool invertible() const {
         return determinant() != 0;
@@ -49,7 +49,7 @@ public:
         return columns[col];
     }
 
-    float get(int row, int col) const {
+    double get(int row, int col) const {
 #ifdef DEBUG_CHECKS
         if (row < 0 || row >= size) {
             error() << "One does not simply get rows outside the matrix." << endl;
@@ -58,7 +58,7 @@ public:
         return getCol(col).get(row);
     }
 
-    void set(int row, int col, float value){
+    void set(int row, int col, double value){
 #ifdef DEBUG_CHECKS
         if (row < 0 || row >= size) {
             error() << "One does not simply set rows outside the matrix." << endl;
@@ -78,12 +78,12 @@ public:
 class Transformation {
 public:
     static Matrix identity();
-    static Matrix translation(float x, float y, float z);
-    static Matrix scaling(float x, float y, float z);
-    static Matrix rotation_x(float rad);
-    static Matrix rotation_y(float rad);
-    static Matrix rotation_z(float rad);
-    static Matrix shearing(float xy, float xz, float yx, float yz, float zx, float zy);
+    static Matrix translation(double x, double y, double z);
+    static Matrix scaling(double x, double y, double z);
+    static Matrix rotation_x(double rad);
+    static Matrix rotation_y(double rad);
+    static Matrix rotation_z(double rad);
+    static Matrix shearing(double xy, double xz, double yx, double yz, double zx, double zy);
     static Matrix view_transform(const Tuple& from, const Tuple& to, const Tuple& up);
 };
 
@@ -117,7 +117,7 @@ public:
     Matrix inverse() const {
         return memo_inverse;
     }
-    void set(int row, int col, float value){
+    void set(int row, int col, double value){
         Matrix::set(row, col, value);
         memoize();
     }

@@ -24,7 +24,7 @@ Colour Material::lighting(const PointLight& light, const Tuple& position, const 
     if (in_shadow) return ambient_colour;
 
     Tuple light_direction = light.position.subtract(position).normalize();
-    float cos_light_to_normal = light_direction.dot(normal_vector);  // Since both are normalized
+    double cos_light_to_normal = light_direction.dot(normal_vector);  // Since both are normalized
 
     Colour diffuse_colour;
     Colour specular_colour;
@@ -32,10 +32,10 @@ Colour Material::lighting(const PointLight& light, const Tuple& position, const 
         diffuse_colour = base_colour.scale(diffuse * cos_light_to_normal);
 
         Tuple reflection_direction = light_direction.negate().reflect(normal_vector);
-        float cos_reflect_to_eye = reflection_direction.dot(eye_vector);  // Since both are normalized
+        double cos_reflect_to_eye = reflection_direction.dot(eye_vector);  // Since both are normalized
 
         if (cos_reflect_to_eye >= 0){
-            float factor = pow(cos_reflect_to_eye, shininess);
+            double factor = pow(cos_reflect_to_eye, shininess);
             specular_colour = light.intensity.scale(specular * factor);
         }
     }

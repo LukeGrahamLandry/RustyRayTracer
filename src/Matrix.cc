@@ -25,7 +25,7 @@ Matrix Matrix::multiply(const Matrix &other) const {
     Matrix result;
     for (int r=0;r<4;r++) {
         for (int c = 0; c < 4; c++) {  // Cringe that i'm redoing dot product but its also cringe to remake tuple objects every time
-            float v = get(r, 0) * other.get(0, c) + get(r, 1) * other.get(1, c) + get(r, 2) * other.get(2, c) + get(r, 3) * other.get(3, c);
+            double v = get(r, 0) * other.get(0, c) + get(r, 1) * other.get(1, c) + get(r, 2) * other.get(2, c) + get(r, 3) * other.get(3, c);
             result.set(r, c, v);
         }
     }
@@ -35,7 +35,7 @@ Matrix Matrix::multiply(const Matrix &other) const {
 Tuple Matrix::multiply(const Tuple &other) const {
     Tuple result;
     for (int r=0;r<4;r++) {
-        float v = 0;
+        double v = 0;
         for (int c = 0; c < 4; c++) {
             v += get(r, c) * other.get(c);
         }
@@ -74,12 +74,12 @@ Matrix Matrix::submatrix(int row, int col) const {
     return result;
 }
 
-float Matrix::determinant() const {
+double Matrix::determinant() const {
     if (size == 2){
         return (get(0, 0) * get(1, 1)) - (get(1, 0) * get(0, 1));
     }
 
-    float det = 0;
+    double det = 0;
     for (int r=0;r<size;r++){
         det += get(r, 0) * cofactor(r, 0);
     }
@@ -98,7 +98,7 @@ void Matrix::print() const {
 }
 
 Matrix Matrix::inverse() const {
-    float det = determinant();
+    double det = determinant();
 
 #ifdef DEBUG_CHECKS
     if (det == 0) {
@@ -130,7 +130,7 @@ Matrix Matrix::fromRows(const Tuple& r1, const Tuple& r2, const Tuple& r3, const
     return Matrix(r1, r2, r3, r4).transpose();
 }
 
-Matrix Transformation::translation(float x, float y, float z) {
+Matrix Transformation::translation(double x, double y, double z) {
     Matrix result = identity();
     result.set(0, 3, x);
     result.set(1, 3, y);
@@ -144,7 +144,7 @@ Matrix Transformation::identity() {
 
 // TODO: make the constructor take rows so I can write these out so they actually look like the matrix
 
-Matrix Transformation::scaling(float x, float y, float z) {
+Matrix Transformation::scaling(double x, double y, double z) {
     Matrix result = identity();
     result.set(0, 0, x);
     result.set(1, 1, y);
@@ -152,7 +152,7 @@ Matrix Transformation::scaling(float x, float y, float z) {
     return result;
 }
 
-Matrix Transformation::rotation_x(float rad) {
+Matrix Transformation::rotation_x(double rad) {
     Matrix result = identity();
     result.set(1, 1, cos(rad));
     result.set(1, 2, -sin(rad));
@@ -161,7 +161,7 @@ Matrix Transformation::rotation_x(float rad) {
     return result;
 }
 
-Matrix Transformation::rotation_y(float rad) {
+Matrix Transformation::rotation_y(double rad) {
     Matrix result = identity();
     result.set(0, 0, cos(rad));
     result.set(0, 2, sin(rad));
@@ -169,7 +169,7 @@ Matrix Transformation::rotation_y(float rad) {
     result.set(2, 2, cos(rad));
     return result;
 }
-Matrix Transformation::rotation_z(float rad) {
+Matrix Transformation::rotation_z(double rad) {
     Matrix result = identity();
     result.set(0, 0, cos(rad));
     result.set(0, 1, -sin(rad));
@@ -178,7 +178,7 @@ Matrix Transformation::rotation_z(float rad) {
     return result;
 }
 
-Matrix Transformation::shearing(float xy, float xz, float yx, float yz, float zx, float zy) {
+Matrix Transformation::shearing(double xy, double xz, double yx, double yz, double zx, double zy) {
     Matrix result = identity();
     result.set(0, 1, xy);
     result.set(0, 2, xz);

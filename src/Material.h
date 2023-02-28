@@ -15,11 +15,11 @@ class Material {
 public:
     Colour color;
 
-    float ambient;
-    float diffuse;
-    float specular;
+    double ambient;
+    double diffuse;
+    double specular;
 
-    float shininess;
+    double shininess;
 
     Material();
     Colour lighting(const PointLight& light, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector) const;

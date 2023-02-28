@@ -1,6 +1,6 @@
 #include "Tuple.h"
 
-Tuple::Tuple(float x, float y, float z, float w) {
+Tuple::Tuple(double x, double y, double z, double w) {
     set(0, x);
     set(1, y);
     set(2, z);
@@ -43,7 +43,7 @@ Tuple Tuple::negate() const {
     return Tuple(-x(), -y(), -z(), -w());
 }
 
-Tuple Tuple::scale(float s) const {
+Tuple Tuple::scale(double s) const {
 #ifdef DEBUG_CHECKS
     if (isPoint()) error() << "One does not simply scale a point." << endl;
 #endif
@@ -51,7 +51,7 @@ Tuple Tuple::scale(float s) const {
     return Tuple(x() * s, y() * s, z() * s, w() * s);
 }
 
-Tuple Tuple::divide(float s) const {
+Tuple Tuple::divide(double s) const {
 #ifdef DEBUG_CHECKS
     if (isPoint()) error() << "One does not simply scale a point." << endl;
 #endif
@@ -59,12 +59,12 @@ Tuple Tuple::divide(float s) const {
     return Tuple(x() / s, y() / s, z() / s, w() / s);
 }
 
-float Tuple::magnitude() const {
+double Tuple::magnitude() const {
 #ifdef DEBUG_CHECKS
     if (isPoint()) error() << "One does not simply ask the length of a point." << endl;
 #endif
 
-    float lengthSq = 0;
+    double lengthSq = 0;
     for (int i=0;i<4;i++){
         lengthSq += get(i) * get(i);
     }
@@ -73,7 +73,7 @@ float Tuple::magnitude() const {
 }
 
 Tuple Tuple::normalize() const {
-    float length = magnitude();
+    double length = magnitude();
 
 #ifdef DEBUG_CHECKS
     if (isPoint()) error() << "One does not simply normalize a point." << endl;
@@ -83,12 +83,12 @@ Tuple Tuple::normalize() const {
     return Tuple(x() / length, y() / length, z() / length, w() / length);
 }
 
-float Tuple::dot(const Tuple& other) const {
+double Tuple::dot(const Tuple& other) const {
 #ifdef DEBUG_CHECKS
     if (isPoint() || other.isPoint()) error() << "One does not simply take the dot product with a point." << endl;
 #endif
 
-    float v = 0;
+    double v = 0;
     for (int i=0;i<4;i++){
         v += get(i) * other.get(i);
     }

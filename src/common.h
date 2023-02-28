@@ -8,11 +8,11 @@
 
 using namespace std;
 
-inline float EPSILON(){
-    return 0.0000001;
+inline double EPSILON(){
+    return 0.000001;
 }
 
-inline bool almostEqual(float a, float b) {
+inline bool almostEqual(double a, double b) {
     return abs(a - b) < EPSILON();
 }
 

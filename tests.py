@@ -38,10 +38,10 @@ class TokenType(Enum):
 
 class Token:
     type: TokenType
-    lexeme: str | float | None
+    lexeme: str | double | None
     line: int
 
-    def __init__(self, type: TokenType, lexeme: str | float | None, line: int):
+    def __init__(self, type: TokenType, lexeme: str | double | None, line: int):
         self.type = type
         self.lexeme = lexeme
         self.line = line
@@ -92,9 +92,9 @@ functions = {
     "vector": FunctionDef(False, "Tuple", "Vector"),
     "tuple": FunctionDef(False, "Tuple", "Tuple"),
     "inverse": FunctionDef(True, "Matrix", "inverse"),
-    "magnitude": FunctionDef(True, "float", "magnitude"),
+    "magnitude": FunctionDef(True, "double", "magnitude"),
     "normalize": FunctionDef(True, "Tuple", "normalize"),
-    "dot": FunctionDef(True, "float", "dot"),
+    "dot": FunctionDef(True, "double", "dot"),
     "cross": FunctionDef(True, "Tuple", "cross"),
     "position": FunctionDef(True, "Tuple", "position"),
     "intersect": FunctionDef(True, "Intersections", "intersect"),
@@ -128,20 +128,20 @@ binary_operators = [
     OperatorDef(TokenType.STAR, "Matrix", "Tuple", "Tuple", "<a>.multiply(<b>)"),
     OperatorDef(TokenType.PLUS, "Tuple", "Tuple", "Tuple", "<a>.add(<b>)"),
     OperatorDef(TokenType.MINUS, "Tuple", "Tuple", "Tuple", "<a>.subtract(<b>)"),
-    OperatorDef(TokenType.STAR, "Tuple", "float", "Tuple", "<a>.scale(<b>)"),
-    OperatorDef(TokenType.SLASH, "Tuple", "float", "Tuple", "<a>.divide(<b>)"),
+    OperatorDef(TokenType.STAR, "Tuple", "double", "Tuple", "<a>.scale(<b>)"),
+    OperatorDef(TokenType.SLASH, "Tuple", "double", "Tuple", "<a>.divide(<b>)"),
     OperatorDef(TokenType.PLUS, "Colour", "Colour", "Colour", "<a>.add(<b>)"),
     OperatorDef(TokenType.MINUS, "Colour", "Colour", "Colour", "<a>.subtract(<b>)"),
-    OperatorDef(TokenType.STAR, "Colour", "float", "Colour", "<a>.scale(<b>)"),
+    OperatorDef(TokenType.STAR, "Colour", "double", "Colour", "<a>.scale(<b>)"),
     OperatorDef(TokenType.STAR, "Colour", "Colour", "Colour", "<a>.multiply(<b>)")
 ]
 
 for op in [TokenType.STAR, TokenType.PLUS, TokenType.SLASH, TokenType.MINUS]:
-    binary_operators.append(OperatorDef(op, "float", "float", "float", "<a> " + op.value + " <b>"))
+    binary_operators.append(OperatorDef(op, "double", "double", "double", "<a> " + op.value + " <b>"))
 
 unary_operators = [
-    OperatorDef(TokenType.ROOT, "", "float", "float", "sqrt(<b>)"),
-    OperatorDef(TokenType.MINUS, "", "float", "float", "-<b>"),
+    OperatorDef(TokenType.ROOT, "", "double", "double", "sqrt(<b>)"),
+    OperatorDef(TokenType.MINUS, "", "double", "double", "-<b>"),
     OperatorDef(TokenType.MINUS, "", "Tuple", "Tuple", "<b>.negate()")
 ]
 
@@ -159,16 +159,16 @@ Field = namedtuple("Field", "name type is_getter is_pointer")
 
 fields = {
     "Colour": [
-        Field(name="red", type="float", is_getter=False, is_pointer=False),
-        Field(name="green", type="float", is_getter=False, is_pointer=False),
-        Field(name="blue", type="float", is_getter=False, is_pointer=False)
+        Field(name="red", type="double", is_getter=False, is_pointer=False),
+        Field(name="green", type="double", is_getter=False, is_pointer=False),
+        Field(name="blue", type="double", is_getter=False, is_pointer=False)
     ],
     "Ray": [
         Field(name="origin", type="Tuple", is_getter=False, is_pointer=False),
         Field(name="direction", type="Tuple", is_getter=False, is_pointer=False)
     ],
     "Intersection": [
-        Field(name="t", type="float", is_getter=False, is_pointer=False),
+        Field(name="t", type="double", is_getter=False, is_pointer=False),
         Field(name="object", type="Sphere", is_getter=False, is_pointer=True),
         Field(name="point", type="Tuple", is_getter=False, is_pointer=False),
         Field(name="normalv", type="Tuple", is_getter=False, is_pointer=False),
@@ -176,13 +176,13 @@ fields = {
         Field(name="inside", type="bool", is_getter=False, is_pointer=False)
     ],
     "Tuple": [
-        Field(name="x", type="float", is_getter=True, is_pointer=False),
-        Field(name="y", type="float", is_getter=True, is_pointer=False),
-        Field(name="z", type="float", is_getter=True, is_pointer=False),
-        Field(name="w", type="float", is_getter=True, is_pointer=False)
+        Field(name="x", type="double", is_getter=True, is_pointer=False),
+        Field(name="y", type="double", is_getter=True, is_pointer=False),
+        Field(name="z", type="double", is_getter=True, is_pointer=False),
+        Field(name="w", type="double", is_getter=True, is_pointer=False)
     ],
     "Intersections": [
-        Field(name="count", type="float", is_getter=True, is_pointer=False)
+        Field(name="count", type="double", is_getter=True, is_pointer=False)
     ],
     "Sphere": [
         Field(name="transform", type="Matrix", is_getter=False, is_pointer=False),
@@ -194,17 +194,17 @@ fields = {
     ],
     "Material": [
         Field(name="color", type="Colour", is_getter=False, is_pointer=False),
-        Field(name="ambient", type="float", is_getter=False, is_pointer=False),
-        Field(name="diffuse", type="float", is_getter=False, is_pointer=False),
-        Field(name="specular", type="float", is_getter=False, is_pointer=False),
-        Field(name="shininess", type="float", is_getter=False, is_pointer=False)
+        Field(name="ambient", type="double", is_getter=False, is_pointer=False),
+        Field(name="diffuse", type="double", is_getter=False, is_pointer=False),
+        Field(name="specular", type="double", is_getter=False, is_pointer=False),
+        Field(name="shininess", type="double", is_getter=False, is_pointer=False)
     ],
     "Camera": [
-        Field(name="hsize", type="float", is_getter=False, is_pointer=False),
-        Field(name="vsize", type="float", is_getter=False, is_pointer=False),
-        Field(name="field_of_view", type="float", is_getter=False, is_pointer=False),
+        Field(name="hsize", type="double", is_getter=False, is_pointer=False),
+        Field(name="vsize", type="double", is_getter=False, is_pointer=False),
+        Field(name="field_of_view", type="double", is_getter=False, is_pointer=False),
         Field(name="transform", type="Matrix", is_getter=False, is_pointer=False),
-        Field(name="pixel_size", type="float", is_getter=False, is_pointer=False)
+        Field(name="pixel_size", type="double", is_getter=False, is_pointer=False)
     ]
 }
 
@@ -272,7 +272,7 @@ def scan(src: str) -> list[Token]:
             start += 1
 
         try:
-            tokens.append(Token(TokenType.NUMBER, float(lexeme), line))
+            tokens.append(Token(TokenType.NUMBER, double(lexeme), line))
         except:
             parts = lexeme.split(".")
             for p in parts:
@@ -402,7 +402,7 @@ class Compiler:
     def parse_primary(self):
         left = None
         if self.match(TokenType.PI):
-            left = Expr(c_code="M_PI", type="float")
+            left = Expr(c_code="M_PI", type="double")
         elif self.check(TokenType.IDENTIFIER):
             name = self.advance().lexeme
             if self.match(TokenType.LEFT_PAREN):  # function call
@@ -436,8 +436,8 @@ class Compiler:
                 else:
                     left = Expr(c_code=name, type=self.get_var_type(name))
 
-        elif self.check(TokenType.NUMBER):  # float literal
-            left = Expr(c_code=str(self.advance().lexeme), type="float")
+        elif self.check(TokenType.NUMBER):  # double literal
+            left = Expr(c_code=str(self.advance().lexeme), type="double")
 
         while True:
             if self.match(TokenType.DOT):
@@ -533,7 +533,7 @@ class Compiler:
             if left.type != right.type:
                 self.error("Cannot assert equality of different types: {} and {}".format(left.type, right.type))
 
-            if left.type == "float":
+            if left.type == "double":
                 assertion = "almostEqual({}, {})".format(left.c_code, right.c_code)
             elif left.type in ["Matrix", "Tuple", "Colour", "Sphere", "Intersection", "Material"]:
                 assertion = "{}.equals({})".format(left.c_code, right.c_code)

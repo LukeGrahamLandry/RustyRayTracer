@@ -10,12 +10,12 @@ public:
     MemoMatrix transform;
     int hsize;
     int vsize;
-    float field_of_view;  // radians!
-    float pixel_size;
-    float half_width;
-    float half_height;
+    double field_of_view;  // radians!
+    double pixel_size;
+    double half_width;
+    double half_height;
 
-    Camera(int hsize, int vsize, float field_of_view);
+    Camera(int hsize, int vsize, double field_of_view);
     void set_transform(const Matrix& m){
         transform = MemoMatrix(m);
     }

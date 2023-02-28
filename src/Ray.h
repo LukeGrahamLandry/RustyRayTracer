@@ -12,7 +12,7 @@ public:
 
     Ray();
     Ray(const Tuple& origin, const Tuple& direction);
-    Tuple position(float t) const;
+    Tuple position(double t) const;
     Ray transform(const Matrix& transformation) const;
 };
 
@@ -23,7 +23,7 @@ public:
     Intersection();
     Intersection(const Intersection &other);
 
-    float t;
+    double t;
     Sphere* object;
 
     bool hasPreComputed;
@@ -33,7 +33,7 @@ public:
     bool inside;
     Tuple over_point;
 
-    Intersection(float tIn, Sphere& objectIn);
+    Intersection(double tIn, Sphere& objectIn);
 
     Intersection& prepare_computations(const Ray& ray);
 

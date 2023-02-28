@@ -1,15 +1,15 @@
 #include "demo.h"
 
 void chapter4(){
-    float degToRad = M_PI / 180;
-    float radius = 10;
-    float size = 30;
+    double degToRad = M_PI / 180;
+    double radius = 10;
+    double size = 30;
     int count = 12;
     Canvas screen = Canvas((int) size, (int) size);
     Colour white = Colour(1, 1, 1);
 
     // How much more to rotate for each subsequent point.
-    Matrix base = Transformation::rotation_z(degToRad * (float) (360.0 / count));
+    Matrix base = Transformation::rotation_z(degToRad * (double) (360.0 / count));
 
     // Moves from world coordinates to canvas coordinates.
     // Scale up the point, which just moves away from the origin.
@@ -35,24 +35,24 @@ void chapter4(){
 
 void chapter5() {
     int size = 100;
-    float wall_distance = 200;
+    double wall_distance = 200;
     Canvas screen = Canvas(size, size);
     Colour black = Colour(0, 0, 0);
     Colour red = Colour(1, 0, 0);
 
-    Matrix move_to_center = Transformation::translation((float) (size / 2.0), (float) (size / 2.0), 0);
+    Matrix move_to_center = Transformation::translation((double) (size / 2.0), (double) (size / 2.0), 0);
     Tuple ray_start = move_to_center.multiply(Point(0, 0, 0));
 
     Sphere sphere;
     Matrix move_away = Transformation::translation(0, 0, 20);
-    float scale = 2;
+    double scale = 2;
     Matrix bigger = Transformation::scaling(scale, scale, scale);
     Matrix useless_rotation = Transformation::rotation_z(0);
     sphere.set_transform(Transformation::identity().multiply(move_away).multiply(move_to_center).multiply(bigger).multiply(useless_rotation).multiply(Transformation::scaling(1, 0.5, 1)));
 
     for (int x = 0;x<size;x++){
         for (int y = 0;y<size;y++){
-            Tuple ray_end = Point((float) x, (float) y, wall_distance);
+            Tuple ray_end = Point((double) x, (double) y, wall_distance);
             Tuple ray_direction = ray_end.subtract(ray_start);
             Ray ray = Ray(ray_start, ray_direction);
 
@@ -69,11 +69,11 @@ void chapter6() {
 
     int resolution_scale = 1;
     int size = 100 * resolution_scale;
-    float wall_distance = (float) (200.0 * resolution_scale);
+    double wall_distance = (double) (200.0 * resolution_scale);
     Canvas screen = Canvas(size, size);
     Colour black = Colour(0, 0, 0);
 
-    Matrix move_to_center = Transformation::translation((float) (size / 2.0), (float) (size / 2.0), 0);
+    Matrix move_to_center = Transformation::translation((double) (size / 2.0), (double) (size / 2.0), 0);
     Tuple ray_start = move_to_center.multiply(Point(0, 0, 0));
 
     Sphere sphere;
@@ -81,14 +81,14 @@ void chapter6() {
     PointLight light = PointLight(Point(-10, 10, -10), Colour(1, 1, 1));
 
     Matrix move_away = Transformation::translation(0, 0, 20);
-    float scale = 2;
+    double scale = 2;
     Matrix bigger = Transformation::scaling(scale, scale, scale);
     Matrix useless_rotation = Transformation::rotation_z(0);
     sphere.set_transform(Transformation::identity().multiply(move_away).multiply(move_to_center).multiply(bigger).multiply(useless_rotation).multiply(Transformation::scaling(scale, scale, scale)));
 
     for (int x = 0;x<size;x++){
         for (int y = 0;y<size;y++){
-            Tuple ray_end = Point((float) x, (float) y, wall_distance);
+            Tuple ray_end = Point((double) x, (double) y, wall_distance);
             Tuple ray_direction = ray_end.subtract(ray_start).normalize();
             Ray ray = Ray(ray_start, ray_direction);
 

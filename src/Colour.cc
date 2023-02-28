@@ -1,6 +1,6 @@
 #include "Colour.h"
 
-Colour::Colour(float red, float green, float blue) {
+Colour::Colour(double red, double green, double blue) {
     this->red = red;
     this->green = green;
     this->blue = blue;
@@ -20,7 +20,7 @@ Colour Colour::subtract(const Colour &other) const {
     return Colour(red - other.red, green - other.green, blue - other.blue);
 }
 
-Colour Colour::scale(float s) const {
+Colour Colour::scale(double s) const {
     return Colour(red * s, green * s, blue * s);
 }
 

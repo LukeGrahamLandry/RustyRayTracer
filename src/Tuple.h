@@ -8,19 +8,19 @@ public:
     Tuple();
     Tuple(const Tuple& other);
 
-    float values[4];
+    double values[4];
 
-    Tuple(float x, float y, float z, float w);
+    Tuple(double x, double y, double z, double w);
     bool isPoint() const;
     bool isVector() const;
     Tuple add(const Tuple& other) const;
     Tuple subtract(const Tuple &other) const;
     Tuple negate() const;
-    Tuple scale(float s) const;
-    Tuple divide(float s) const;
-    float magnitude() const;
+    Tuple scale(double s) const;
+    Tuple divide(double s) const;
+    double magnitude() const;
     Tuple normalize() const;
-    float dot(const Tuple &other) const;
+    double dot(const Tuple &other) const;
     Tuple cross(const Tuple &other) const;
     Tuple reflect(const Tuple& normal) const;
 
@@ -31,22 +31,22 @@ public:
         return true;
     }
 
-    inline void set(int i, float value){
+    inline void set(int i, double value){
         values[i] = value;
     }
-    inline float get(int i) const {
+    inline double get(int i) const {
         return values[i];
     }
-    inline float x() const {
+    inline double x() const {
         return values[0];
     }
-    inline float y() const {
+    inline double y() const {
         return values[1];
     }
-    inline float z() const {
+    inline double z() const {
         return values[2];
     }
-    inline float w() const {
+    inline double w() const {
         return values[3];
     }
 
@@ -55,14 +55,14 @@ public:
 
 class Point : public Tuple {
 public:
-    Point(float x, float y, float z): Tuple(x, y, z, 1){
+    Point(double x, double y, double z): Tuple(x, y, z, 1){
 
     }
 };
 
 class Vector : public Tuple {
 public:
-    Vector(float x, float y, float z): Tuple(x, y, z, 0){
+    Vector(double x, double y, double z): Tuple(x, y, z, 0){
 
     }
 };

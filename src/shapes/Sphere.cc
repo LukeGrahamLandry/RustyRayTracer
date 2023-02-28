@@ -1,11 +1,11 @@
 #include "Sphere.h"
 
 Sphere::Sphere() {
-    transform = Transformation::identity();
+    set_transform(Transformation::identity());
 }
 
 Intersections Sphere::intersect(const Ray& world_space_ray) {
-    Ray ray = world_space_ray.transform(transform.inverse());
+    Ray ray = world_space_ray.transform(inverse_transform);
 
     Tuple sphere_to_ray = ray.origin.subtract(Point(0, 0, 0));
     float a = ray.direction.dot(ray.direction);
@@ -32,4 +32,14 @@ bool Sphere::equals(const Sphere& sphere) const {
 
 void Sphere::set_transform(Matrix m) {
     transform = m;
+    inverse_transform = m.inverse();
+    transpose_inverse_transform = m.inverse().transpose();
+}
+
+Tuple Sphere::normal_at(const Tuple& world_space_point) const {
+    Tuple object_space_point = inverse_transform.multiply(world_space_point);
+    Tuple object_space_normal = object_space_point.subtract(Point(0, 0, 0));
+    Tuple world_space_normal =  transpose_inverse_transform.multiply(object_space_normal);
+    world_space_normal.set(3, 0);  // cringe
+    return world_space_normal.normalize();
 }

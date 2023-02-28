@@ -11,6 +11,7 @@
 **Additions**
 
 - Parser that generates c++ from the dialect of gherkin used for test specs in The Ray Tracer Challenge 
+- Sphere caches transformation's inverse and transpose of inverse
 
 ## Stuff to fix
 
@@ -35,6 +36,9 @@
 - line-sphere intersection
     - should be an easy substitution that becomes a quadratic
 - explain world space vs object space
+  - why does normal use transpose of inverse instead of just the raw transform
+- reflect vector across normal
+- why the phong reflection model works. where do the colour weightings come from 
 
 Should make a nice website for all of these. Seems like a perfect application for experimenting with animating visual proofs.
 

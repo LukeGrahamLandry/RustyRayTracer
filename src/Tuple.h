@@ -22,6 +22,7 @@ public:
     Tuple normalize() const;
     float dot(const Tuple &other) const;
     Tuple cross(const Tuple &other) const;
+    Tuple reflect(const Tuple& normal) const;
 
     bool equals(const Tuple &other) const {
         for (int i=0;i<4;i++){

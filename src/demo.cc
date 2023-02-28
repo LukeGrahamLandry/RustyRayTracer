@@ -63,3 +63,51 @@ void chapter5() {
 
     screen.write_ppm("chapter5.ppm");
 }
+
+void chapter6() {
+    long start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
+
+    int resolution_scale = 1;
+    int size = 100 * resolution_scale;
+    float wall_distance = (float) (200.0 * resolution_scale);
+    Canvas screen = Canvas(size, size);
+    Colour black = Colour(0, 0, 0);
+
+    Matrix move_to_center = Transformation::translation((float) (size / 2.0), (float) (size / 2.0), 0);
+    Tuple ray_start = move_to_center.multiply(Point(0, 0, 0));
+
+    Sphere sphere;
+    sphere.material.color = Colour(0.2, 1, 1);
+    PointLight light = PointLight(Point(-10, 10, -10), Colour(1, 1, 1));
+
+    Matrix move_away = Transformation::translation(0, 0, 20);
+    float scale = 2;
+    Matrix bigger = Transformation::scaling(scale, scale, scale);
+    Matrix useless_rotation = Transformation::rotation_z(0);
+    sphere.set_transform(Transformation::identity().multiply(move_away).multiply(move_to_center).multiply(bigger).multiply(useless_rotation).multiply(Transformation::scaling(scale, scale, scale)));
+
+    for (int x = 0;x<size;x++){
+        for (int y = 0;y<size;y++){
+            Tuple ray_end = Point((float) x, (float) y, wall_distance);
+            Tuple ray_direction = ray_end.subtract(ray_start).normalize();
+            Ray ray = Ray(ray_start, ray_direction);
+
+            Intersections hit = sphere.intersect(ray);
+
+            if (hit.hasHit()){
+                Tuple point_on_sphere = ray.position(hit.hit().t);
+                Tuple normal = sphere.normal_at(point_on_sphere);
+                Colour colour = sphere.material.lighting(light, point_on_sphere, ray_direction.negate(), normal);
+                screen.write_pixel(x, y, colour);
+            } else {
+                screen.write_pixel(x, y, black);
+            }
+        }
+
+        cout << x << "/" << size << endl;
+    }
+
+    long end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
+    cout << "Rendered " << (size * size) << " pixels in " << (end_time - start_time) << " ms." << endl;
+    screen.write_ppm("chapter6.ppm");
+}

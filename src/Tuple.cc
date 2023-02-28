@@ -120,3 +120,7 @@ Tuple::Tuple(const Tuple &other) {
         set(i, other.get(i));
     }
 }
+
+Tuple Tuple::reflect(const Tuple& normal) const {
+    return subtract(normal.scale(2 * dot(normal)));
+}

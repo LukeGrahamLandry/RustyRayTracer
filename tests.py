@@ -9,6 +9,7 @@ from time import time
 class TokenType(Enum):
     FEATURE = "Feature: "
     SCENARIO = "Scenario: "
+    BACKGROUND = "Background:"
     GIVEN = "Given "
     AND = "And "
     WHEN = "When "
@@ -81,6 +82,8 @@ class OperatorDef:
 keywords = {e.value: e for e in TokenType if isinstance(e.value, str)}
 functions = {
     "color": FunctionDef(False, "Colour", "Colour"),
+    "point_light": FunctionDef(False, "PointLight", "PointLight"),
+    "material": FunctionDef(False, "Material", "Material"),
     "ray": FunctionDef(False, "Ray", "Ray"),
     "sphere": FunctionDef(False, "Sphere", "Sphere"),
     "intersection": FunctionDef(False, "Intersection", "Intersection"),
@@ -96,7 +99,10 @@ functions = {
     "intersect": FunctionDef(True, "Intersections", "intersect"),
     "hit": FunctionDef(True, "Intersection", "hit"),
     "transform": FunctionDef(True, "Ray", "transform"),
-    "set_transform": FunctionDef(True, "void", "set_transform")
+    "set_transform": FunctionDef(True, "void", "set_transform"),
+    "normal_at": FunctionDef(True, "Tuple", "normal_at"),
+    "reflect": FunctionDef(True, "Tuple", "reflect"),
+    "lighting": FunctionDef(True, "Colour", "lighting")
 }
 
 transformations = ["translation", "scaling", "rotation_x", "rotation_y", "rotation_z", "shearing"]
@@ -163,7 +169,19 @@ fields = {
         Field(name="count", type="float", is_getter=True, is_pointer=False)
     ],
     "Sphere": [
-        Field(name="transform", type="Matrix", is_getter=False, is_pointer=False)
+        Field(name="transform", type="Matrix", is_getter=False, is_pointer=False),
+        Field(name="material", type="Material", is_getter=False, is_pointer=False)
+    ],
+    "PointLight": [
+        Field(name="intensity", type="Colour", is_getter=False, is_pointer=False),
+        Field(name="position", type="Tuple", is_getter=False, is_pointer=False)
+    ],
+    "Material": [
+        Field(name="color", type="Colour", is_getter=False, is_pointer=False),
+        Field(name="ambient", type="float", is_getter=False, is_pointer=False),
+        Field(name="diffuse", type="float", is_getter=False, is_pointer=False),
+        Field(name="specular", type="float", is_getter=False, is_pointer=False),
+        Field(name="shininess", type="float", is_getter=False, is_pointer=False)
     ]
 }
 
@@ -255,6 +273,7 @@ class Compiler:
     current_scenario: str
     output_line_count: int
     filepath: str
+    background_code: list[str]
 
     def __init__(self, path: str, lines: int):
         self.filepath = path
@@ -268,16 +287,20 @@ class Compiler:
         self.tokens = scan(src)
         self.i = 0
         self.scopes = []
+        self.background_code = []
 
         self.build()
 
     def build(self):
         self.push_scope()
         self.line("int _passedScenarioCount = 0;")
-        self.consume(TokenType.FEATURE, "Expect 'Feature' at beginning of file.")
 
+        self.consume(TokenType.FEATURE, "Expect 'Feature' at beginning of file.")
         name = self.read_name()
         self.line("cout << \"FEATURE: " + name + ".\" << endl;")
+
+        self.setup_background()
+
         count = 0
         while not self.match(TokenType.EOF):
             self.parse_scenario()
@@ -296,6 +319,14 @@ class Compiler:
             self.current_scenario = self.read_name()
             self.push_scope()
             self.line("bool _scenarioPassed = true;")
+
+            # Inject background setup for every test. Not at top level so variables reset for each scenario.
+            # Used by materials.feature
+            for line in self.background_code:
+                self.line(line.strip())
+            # Start a new scope which lets scenarios redefine names from the background setup.
+            self.push_scope()
+
             self.consume(TokenType.GIVEN, "Expect 'Given' as first statement.")
             self.parse_statement()
 
@@ -317,6 +348,7 @@ class Compiler:
             self.line('    cout << "         at src/tests.cc:{}" << endl;'.format(line_count))
             self.line("}")
             self.pop_scope()
+            self.pop_scope()
         except ParseError:
             self.code = self.code[:start]
             self.output_line_count = line_count
@@ -324,6 +356,20 @@ class Compiler:
                 self.i += 1
             self.scopes = self.scopes[:1]
             self.line('cout << " - ERROR: {}" << endl;'.format(self.current_scenario))
+
+    def setup_background(self):
+        if self.match(TokenType.BACKGROUND):
+            start = len(self.code)
+            line_count = self.output_line_count
+
+            # Note: No inner compiler scope so the types get saved in the outermost one.
+            #       Which works out to the behaviour I want.
+            self.consume(TokenType.GIVEN, "Expect 'Given' as first statement.")
+            self.parse_statement()
+
+            self.background_code += self.code[start:].split("\n")
+            self.code = self.code[:start]
+            self.output_line_count = line_count
 
     def parse_statement(self):
         self.parse_expression()
@@ -362,6 +408,8 @@ class Compiler:
             else:  # variable access
                 if name in variables:
                     left = variables[name]
+                elif name in ["true", "false"]:
+                    left = Expr(c_code=name, type="bool")
                 else:
                     left = Expr(c_code=name, type=self.get_var_type(name))
 
@@ -448,8 +496,15 @@ class Compiler:
 
         # These two can end the expression parsing. They don't return a value and correspond to c statement.
         if operator == TokenType.ASSIGN:
-            self.put_var_type(left.c_code, right.type)
-            self.line("{} {} = {};".format(right.type, left.c_code, right.c_code))
+            if right.type is None:
+                self.error("Cannot assign to value of unknown type: {} = {};".format(left.c_code, right.c_code))
+
+            if "." in left.c_code:  # set field
+                # TODO: type check
+                self.line("{} = {};".format(left.c_code, right.c_code))
+            else:  # declare variable
+                self.put_var_type(left.c_code, right.type)
+                self.line("{} {} = {};".format(right.type, left.c_code, right.c_code))
             return None
         elif operator == TokenType.EQUALITY:
             if left.type != right.type:
@@ -457,7 +512,7 @@ class Compiler:
 
             if left.type == "float":
                 assertion = "almostEqual({}, {})".format(left.c_code, right.c_code)
-            elif left.type in ["Matrix", "Tuple", "Colour", "Sphere", "Intersection"]:
+            elif left.type in ["Matrix", "Tuple", "Colour", "Sphere", "Intersection", "Material"]:
                 assertion = "{}.equals({})".format(left.c_code, right.c_code)
             elif left.type in ["int"]:
                 assertion = "{} == {}".format(left.c_code, right.c_code)

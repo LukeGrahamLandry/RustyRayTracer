@@ -1,5 +1,4 @@
 #define DEBUG_CHECKS
-#undef DEBUG_CHECKS
 
 #include "cmath"
 #include <iostream>

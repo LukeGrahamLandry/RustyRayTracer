@@ -101,7 +101,10 @@ Matrix Matrix::inverse() const {
     float det = determinant();
 
 #ifdef DEBUG_CHECKS
-    if (det == 0) error() << "One does not simply invert the un-invertible" << endl;
+    if (det == 0) {
+        error() << "One does not simply invert the un-invertible" << endl;
+        return Matrix();
+    }
 #endif
 
     Matrix result;
@@ -115,12 +118,16 @@ Matrix Matrix::inverse() const {
 }
 
 Matrix::Matrix(const Matrix &other) {
+    size = other.size;
     for (int r=0;r<other.size;r++){
         for (int c=0;c<other.size;c++) {
             set(r, c, other.get(r, c));
         }
     }
-    size = other.size;
+}
+
+Matrix Matrix::fromRows(const Tuple& r1, const Tuple& r2, const Tuple& r3, const Tuple& r4){
+    return Matrix(r1, r2, r3, r4).transpose();
 }
 
 Matrix Transformation::translation(float x, float y, float z) {
@@ -180,4 +187,13 @@ Matrix Transformation::shearing(float xy, float xz, float yx, float yz, float zx
     result.set(2, 0, zx);
     result.set(2, 1, zy);
     return result;
+}
+
+Matrix Transformation::view_transform(const Tuple& from, const Tuple& to, const Tuple& up) {
+    Tuple forward = to.subtract(from).normalize();
+    Tuple upn = up.normalize();
+    Tuple left = forward.cross(upn);
+    Tuple true_up = left.cross(forward);
+    Matrix orientation = Matrix::fromRows(Tuple(left.x(), left.y(), left.z(), 0), Tuple(true_up.x(), true_up.y(), true_up.z(), 0), Tuple(-forward.x(), -forward.y(), -forward.z(), 0), Tuple(0, 0, 0, 1));
+    return orientation.multiply(Transformation::translation(-from.x(), -from.y(), -from.z()));
 }

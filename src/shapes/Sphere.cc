@@ -5,7 +5,7 @@ Sphere::Sphere() {
 }
 
 Intersections Sphere::intersect(const Ray& world_space_ray) {
-    Ray ray = world_space_ray.transform(inverse_transform);
+    Ray ray = world_space_ray.transform(transform.inverse());
 
     Tuple sphere_to_ray = ray.origin.subtract(Point(0, 0, 0));
     float a = ray.direction.dot(ray.direction);
@@ -30,16 +30,15 @@ bool Sphere::equals(const Sphere& sphere) const {
     return transform.equals(sphere.transform);
 }
 
-void Sphere::set_transform(Matrix m) {
-    transform = m;
-    inverse_transform = m.inverse();
-    transpose_inverse_transform = m.inverse().transpose();
+void Sphere::set_transform(const Matrix& m) {
+    transform = MemoMatrix(m);
 }
 
 Tuple Sphere::normal_at(const Tuple& world_space_point) const {
-    Tuple object_space_point = inverse_transform.multiply(world_space_point);
+    Tuple object_space_point = transform.inverse().multiply(world_space_point);
     Tuple object_space_normal = object_space_point.subtract(Point(0, 0, 0));
-    Tuple world_space_normal =  transpose_inverse_transform.multiply(object_space_normal);
+    Tuple world_space_normal =  transform.transpose_of_inverse().multiply(object_space_normal);
     world_space_normal.set(3, 0);  // cringe
+
     return world_space_normal.normalize();
 }

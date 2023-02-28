@@ -35,10 +35,14 @@
     - 2x2 isn't the special case. det(1x1) = M.get(0, 0);
 - line-sphere intersection
     - should be an easy substitution that becomes a quadratic
-- explain world space vs object space
+- world space vs object space
+  - transforming the ray instead of the sphere means you don't have to have a complicated formula for intersection 
   - why does normal use transpose of inverse instead of just the raw transform
 - reflect vector across normal
 - why the phong reflection model works. where do the colour weightings come from 
+- where does view transform come from
+- camera
+  - canvas 1 unit, just to make the tan math easy? rays are infinite so it doesn't matter?
 
 Should make a nice website for all of these. Seems like a perfect application for experimenting with animating visual proofs.
 

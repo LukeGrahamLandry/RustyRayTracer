@@ -5,8 +5,8 @@
 
 class Matrix {
 private:
-    int size;
     Tuple columns[4];
+    int size;
 public:
     Matrix();
     Matrix(const Matrix& other);
@@ -22,39 +22,56 @@ public:
     Matrix submatrix(int row, int col) const;
     void print() const;
 
-    inline float cofactor(int row, int col) const{
+    int getSize() const {
+        return size;
+    }
+
+    // Get the transpose of the inverse of this matrix. Just exists as a little helper here so MemoMatrix can intercept it.
+    Matrix transpose_of_inverse() const {
+        return inverse().transpose();
+    }
+
+    Matrix static fromRows(const Tuple& r1, const Tuple& r2, const Tuple& r3, const Tuple& r4);
+
+    float cofactor(int row, int col) const{
         return submatrix(row, col).determinant() * ((float) ((row + col) % 2 == 0 ? 1 : -1));
     }
-    inline bool invertible() const {
+    bool invertible() const {
         return determinant() != 0;
     }
 
-    inline const Tuple getCol(int col) const {
+    const Tuple& getCol(int col) const {
 #ifdef DEBUG_CHECKS
-        if (col < 0 || col >= size) error() << "One does not simply get columns outside the matrix." << endl;
+        if (col < 0 || col >= size) {
+            error() << "One does not simply get columns outside the matrix." << endl;
+        }
 #endif
         return columns[col];
     }
 
-    float inline get(int row, int col) const {
+    float get(int row, int col) const {
 #ifdef DEBUG_CHECKS
-        if (row < 0 || row >= size) error() << "One does not simply get rows outside the matrix." << endl;
+        if (row < 0 || row >= size) {
+            error() << "One does not simply get rows outside the matrix." << endl;
+        }
 #endif
         return getCol(col).get(row);
     }
 
-    void inline set(int row, int col, float value){
+    void set(int row, int col, float value){
 #ifdef DEBUG_CHECKS
-        if (row < 0 || row >= size) error() << "One does not simply set rows outside the matrix." << endl;
+        if (row < 0 || row >= size) {
+            error() << "One does not simply set rows outside the matrix." << endl;
+        }
 #endif
         columns[col].set(row, value);
     }
 
-    void inline setCol(int col, Tuple vector){
+    void setCol(int col, const Tuple& vector){
 #ifdef DEBUG_CHECKS
         if (col < 0 || col >= size) error() << "One does not simply set columns outside the matrix." << endl;
 #endif
-        columns[col] = vector;
+        columns[col] = vector;  // this does the copy so the version in the array isn't const anymore
     }
 };
 
@@ -67,6 +84,47 @@ public:
     static Matrix rotation_y(float rad);
     static Matrix rotation_z(float rad);
     static Matrix shearing(float xy, float xz, float yx, float yz, float zx, float zy);
+    static Matrix view_transform(const Tuple& from, const Tuple& to, const Tuple& up);
 };
 
-#endif //RAYTRACER_MATRIX_H
+// TODO: Actually understand virtual functions.
+//       I think what i have now works when you have an object of MemoMatrix.
+//       But if I had a Matrix* that happened to have come from a MemoMatrix I would be calling the base functions instead of the overriden ones.
+//       Doing it this way is cool because you can see the performance change by just switching the type of a field between Matrix and MemoMatrix.
+
+class MemoMatrix: public Matrix {
+private:
+    Matrix memo_inverse;
+    Matrix memo_transpose_of_inverse;
+    void memoize(){
+        memo_inverse = Matrix::inverse();
+        memo_transpose_of_inverse = memo_inverse.transpose();
+    }
+public:
+    MemoMatrix(const Matrix &other) : Matrix(other) {
+        memoize();
+    }
+    MemoMatrix() : Matrix() {
+        // Default Matrix is all zeros which has no inverse.
+        // memoize();
+    }
+    MemoMatrix(Tuple c1, Tuple c2, Tuple c3, Tuple c4) : Matrix(c1, c2, c3, c4) {
+        memoize();
+    }
+    Matrix transpose_of_inverse() const {
+        return memo_transpose_of_inverse;
+    }
+    Matrix inverse() const {
+        return memo_inverse;
+    }
+    void set(int row, int col, float value){
+        Matrix::set(row, col, value);
+        memoize();
+    }
+    void setCol(int col, const Tuple& vector){
+        Matrix::setCol(col, vector);
+        memoize();
+    }
+};
+
+#endif

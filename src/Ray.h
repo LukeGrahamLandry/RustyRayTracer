@@ -21,28 +21,41 @@ class Sphere;
 class Intersection {
 public:
     Intersection();
+    Intersection(const Intersection &other);
 
     float t;
     Sphere* object;
+
+    bool hasPreComputed;
+    Tuple point;
+    Tuple eyev;
+    Tuple normalv;
+    bool inside;
+
     Intersection(float tIn, Sphere& objectIn);
+
+    Intersection& prepare_computations(const Ray& ray);
 
     bool equals(const Intersection& other) const;
 };
 
 class Intersections {
 public:
-    vector<Intersection> intersections;
+    vector<Intersection*> intersections;
 
     Intersections();
+    ~Intersections();
     Intersections(initializer_list<Intersection> group);
 
-    void add(Intersection intersection);
+    void add(const Intersection& intersection);
 
     int count();
 
     Intersection get(int index);
     Intersection hit();
     bool hasHit();
+
+    void addAll(const Intersections& intersections);
 };
 
 #include "shapes/Sphere.h"

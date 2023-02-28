@@ -10,13 +10,11 @@ class Intersections;
 
 class Sphere {
 public:
-    Matrix transform;
-    Matrix inverse_transform;
-    Matrix transpose_inverse_transform;
+    MemoMatrix transform;
     Material material;
     Sphere();
     Intersections intersect(const Ray& ray);
-    void set_transform(Matrix m);
+    void set_transform(const Matrix& m);
     Tuple normal_at(const Tuple& point) const;
 
     bool equals(const Sphere& sphere) const;

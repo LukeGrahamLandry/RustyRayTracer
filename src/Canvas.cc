@@ -6,7 +6,7 @@ Canvas::Canvas(int width, int height) {
     this->height = height;
 
     pixels = new Colour*[width];
-    for (int i=0;i<height;i++){
+    for (int i=0;i<width;i++){
         pixels[i] = new Colour[height];
     }
 }
@@ -20,7 +20,9 @@ Canvas::~Canvas() {
 
 void Canvas::write_pixel(int x, int y, const Colour& pixel) {
 #ifdef DEBUG_CHECKS
-    if (x < 0 || x >= width || y < 0 || y >= height) error() << "One does not simply draw out of bounds" << endl;
+    if (x < 0 || x >= width || y < 0 || y >= height) {
+        error() << "One does not simply draw out of bounds" << endl;
+    }
 #endif
 
     pixels[x][y] = pixel;
@@ -28,7 +30,9 @@ void Canvas::write_pixel(int x, int y, const Colour& pixel) {
 
 const Colour & Canvas::pixel_at(int x, int y) const {
 #ifdef DEBUG_CHECKS
-    if (x < 0 || x >= width || y < 0 || y >= height) error() << "One does not simply render out of bounds" << endl;
+    if (x < 0 || x >= width || y < 0 || y >= height) {
+        error() << "One does not simply render out of bounds" << endl;
+    }
 #endif
 
     return pixels[x][y];

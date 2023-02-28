@@ -84,6 +84,7 @@ functions = {
     "color": FunctionDef(False, "Colour", "Colour"),
     "point_light": FunctionDef(False, "PointLight", "PointLight"),
     "material": FunctionDef(False, "Material", "Material"),
+    "camera": FunctionDef(False, "Camera", "Camera"),
     "ray": FunctionDef(False, "Ray", "Ray"),
     "sphere": FunctionDef(False, "Sphere", "Sphere"),
     "intersection": FunctionDef(False, "Intersection", "Intersection"),
@@ -102,14 +103,23 @@ functions = {
     "set_transform": FunctionDef(True, "void", "set_transform"),
     "normal_at": FunctionDef(True, "Tuple", "normal_at"),
     "reflect": FunctionDef(True, "Tuple", "reflect"),
-    "lighting": FunctionDef(True, "Colour", "lighting")
+    "lighting": FunctionDef(True, "Colour", "lighting"),
+    "intersect_world": FunctionDef(True, "Intersections", "intersect"),
+    "default_world": FunctionDef(False, "World", "World::default_world"),
+    "prepare_computations": FunctionDef(True, "Intersection", "prepare_computations"),
+    "shade_hit": FunctionDef(True, "Colour", "shade_hit"),
+    "getShape": FunctionDef(True, "Sphere", "getShape"),
+    "color_at": FunctionDef(True, "Colour", "color_at"),
+    "ray_for_pixel": FunctionDef(True, "Ray", "ray_for_pixel"),
+    "render": FunctionDef(True, "Canvas", "render"),
+    "pixel_at": FunctionDef(True, "Colour", "pixel_at")
 }
 
-transformations = ["translation", "scaling", "rotation_x", "rotation_y", "rotation_z", "shearing"]
+transformations = ["translation", "scaling", "rotation_x", "rotation_y", "rotation_z", "shearing", "view_transform"]
 for name in transformations:
     functions[name] = FunctionDef(False, "Matrix", "Transformation::" + name)
 
-includes = ["common.h", "Matrix.h", "Tuple.h", "Colour.h", "Canvas.h", "Ray.h"]
+includes = ["common.h", "Matrix.h", "Tuple.h", "Colour.h", "Canvas.h", "Ray.h", "World.h", "Camera.h"]
 
 binary_operators = [
     OperatorDef(TokenType.STAR, "Matrix", "Matrix", "Matrix", "<a>.multiply(<b>)"),
@@ -157,7 +167,11 @@ fields = {
     ],
     "Intersection": [
         Field(name="t", type="float", is_getter=False, is_pointer=False),
-        Field(name="object", type="Sphere", is_getter=False, is_pointer=True)
+        Field(name="object", type="Sphere", is_getter=False, is_pointer=True),
+        Field(name="point", type="Tuple", is_getter=False, is_pointer=False),
+        Field(name="normalv", type="Tuple", is_getter=False, is_pointer=False),
+        Field(name="eyev", type="Tuple", is_getter=False, is_pointer=False),
+        Field(name="inside", type="bool", is_getter=False, is_pointer=False)
     ],
     "Tuple": [
         Field(name="x", type="float", is_getter=True, is_pointer=False),
@@ -182,6 +196,13 @@ fields = {
         Field(name="diffuse", type="float", is_getter=False, is_pointer=False),
         Field(name="specular", type="float", is_getter=False, is_pointer=False),
         Field(name="shininess", type="float", is_getter=False, is_pointer=False)
+    ],
+    "Camera": [
+        Field(name="hsize", type="float", is_getter=False, is_pointer=False),
+        Field(name="vsize", type="float", is_getter=False, is_pointer=False),
+        Field(name="field_of_view", type="float", is_getter=False, is_pointer=False),
+        Field(name="transform", type="Matrix", is_getter=False, is_pointer=False),
+        Field(name="pixel_size", type="float", is_getter=False, is_pointer=False)
     ]
 }
 
@@ -514,7 +535,7 @@ class Compiler:
                 assertion = "almostEqual({}, {})".format(left.c_code, right.c_code)
             elif left.type in ["Matrix", "Tuple", "Colour", "Sphere", "Intersection", "Material"]:
                 assertion = "{}.equals({})".format(left.c_code, right.c_code)
-            elif left.type in ["int"]:
+            elif left.type in ["int", "bool"]:
                 assertion = "{} == {}".format(left.c_code, right.c_code)
             else:
                 self.error("Cannot assert equality of unknown type: " + str(left.type))

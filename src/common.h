@@ -1,15 +1,15 @@
-#define DEBUG_CHECKS
-
 #include "cmath"
 #include <iostream>
 
 #ifndef COMMON_H
 #define COMMON_H
 
+#define DEBUG_CHECKS
+
 using namespace std;
 
 inline double EPSILON(){
-    return 0.000001;
+    return 0.0001;
 }
 
 inline bool almostEqual(double a, double b) {
@@ -19,6 +19,5 @@ inline bool almostEqual(double a, double b) {
 inline ostream& error() {
     return cerr;
 }
-
 
 #endif

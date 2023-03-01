@@ -108,16 +108,12 @@ void chapter6() {
         cout << x << "/" << size << endl;
     }
 
-    long end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-    cout << "Rendered " << (size * size) << " pixels in " << (end_time - start_time) << " ms." << endl;
     screen.write_ppm("chapter6.ppm");
 }
 
 
 
 void chapter7() {
-    long start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-
     Sphere floor;
     floor.set_transform(Transformation::scaling(10, 0.01, 10));
     floor.material.color = Colour(1, 0.9, 0.9);
@@ -157,12 +153,12 @@ void chapter7() {
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
 
-
     Tuple light_pos = Point(-10, 10, -10);
     light_pos = Transformation::rotation_x(0).multiply(light_pos);
 
     World world;
-    world.addLight(PointLight(light_pos, Colour(1, 1, 1)));
+    PointLight light = PointLight(light_pos, Colour(1, 1, 1));
+    world.addLight(light);
 
     world.addShape(floor);
     world.addShape(right_wall);
@@ -172,15 +168,12 @@ void chapter7() {
     world.addShape(left);
 
     int resolution_factor = 2;
-    Camera camera = Camera(100 * resolution_factor, 50 * resolution_factor, M_PI/3);
+    Camera camera = Camera(100 * resolution_factor, 50 * resolution_factor, M_PI/3, true);
     Matrix perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
     perspective = perspective.multiply(Transformation::translation(0, 0, 1));
     camera.set_transform(perspective);
 
     Canvas screen = camera.render(world);
-
-    long end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-    cout << "Rendered " << (camera.hsize * camera.vsize) << " pixels in " << (end_time - start_time) << " ms." << endl;
     screen.write_ppm("chapter7.ppm");
 }
 
@@ -209,26 +202,22 @@ void test() {
     light_pos = Transformation::rotation_x(0).multiply(light_pos);
 
     World world;
-    world.addLight(PointLight(light_pos, Colour(1, 1, 1)));
+    PointLight light = PointLight(light_pos, Colour(1, 1, 1));
+    world.addLight(light);
 
     world.addShape(middle);
     world.addShape(right);
     world.addShape(left);
 
     int resolution_factor = 2;
-    Camera camera = Camera(100 * resolution_factor, 50 * resolution_factor, M_PI/3);
+    Camera camera = Camera(100 * resolution_factor, 50 * resolution_factor, M_PI/3, true);
     Matrix perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
 
     for (int i=0;i<16;i++){
-        long start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-
         perspective = perspective.multiply(Transformation::rotation_x(1 * M_PI / 16));
         camera.set_transform(perspective);
 
         Canvas screen = camera.render(world);
-
-        long end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-        cout << "Rendered " << (camera.hsize * camera.vsize) << " pixels in " << (end_time - start_time) << " ms." << endl;
         screen.write_ppm((to_string(i) + "-test.ppm").c_str());
     }
 }
@@ -244,14 +233,16 @@ void lights() {
     light_pos = Transformation::rotation_x(0).multiply(light_pos);
 
     World world;
-    world.addLight(PointLight(light_pos, Colour(1, 0, 0)));
+    PointLight light1 = PointLight(light_pos, Colour(1, 0, 0));
+    world.addLight(light1);
 
-    world.addLight(PointLight(Transformation::translation(20, 0, 0).multiply(light_pos), Colour(0, 0, 1)));
+    PointLight light2 = PointLight(Transformation::translation(20, 0, 0).multiply(light_pos), Colour(0, 0, 1));
+    world.addLight(light2);
 
     world.addShape(middle);
 
     int resolution_factor = 2;
-    Camera camera = Camera(100 * resolution_factor, 50 * resolution_factor, M_PI/3);
+    Camera camera = Camera(100 * resolution_factor, 50 * resolution_factor, M_PI/3, true);
     Matrix perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
     camera.set_transform(perspective);
 

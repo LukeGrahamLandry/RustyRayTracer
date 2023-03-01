@@ -16,7 +16,17 @@ public:
     Ray transform(const Matrix& transformation) const;
 };
 
-class Sphere;
+class Shape;
+
+struct IntersectionComps {
+    double t;
+    Shape* object;
+    Tuple point;
+    Tuple eyev;
+    Tuple normalv;
+    bool inside;
+    Tuple over_point;
+};
 
 class Intersection {
 public:
@@ -24,18 +34,11 @@ public:
     Intersection(const Intersection &other);
 
     double t;
-    Sphere* object;
+    Shape* object;
 
-    bool hasPreComputed;
-    Tuple point;
-    Tuple eyev;
-    Tuple normalv;
-    bool inside;
-    Tuple over_point;
+    Intersection(double tIn, Shape& objectIn);
 
-    Intersection(double tIn, Sphere& objectIn);
-
-    Intersection& prepare_computations(const Ray& ray);
+    IntersectionComps prepare_computations(const Ray& ray) const;
 
     bool equals(const Intersection& other) const;
 };
@@ -50,7 +53,7 @@ public:
 
     void add(const Intersection& intersection);
 
-    int count();
+    int count() const;
 
     Intersection get(int index);
     Intersection hit();
@@ -59,6 +62,6 @@ public:
     void addAll(const Intersections& intersections);
 };
 
-#include "shapes/Sphere.h"
+#include "shapes/Shape.h"
 
 #endif

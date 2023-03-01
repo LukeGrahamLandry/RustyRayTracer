@@ -38,10 +38,10 @@ class TokenType(Enum):
 
 class Token:
     type: TokenType
-    lexeme: str | double | None
+    lexeme: str | float | None
     line: int
 
-    def __init__(self, type: TokenType, lexeme: str | double | None, line: int):
+    def __init__(self, type: TokenType, lexeme: str | float | None, line: int):
         self.type = type
         self.lexeme = lexeme
         self.line = line
@@ -53,15 +53,43 @@ class Token:
         return s
 
 
+Expr = namedtuple("Expr", "c_code type")
+
+
 class FunctionDef:
     is_method: bool
     return_type: str
     c_name: str | None
+    call_format: str
 
     def __init__(self, is_method: bool, return_type: str, c_name: str | None):
         self.is_method = is_method
         self.return_type = return_type
         self.c_name = c_name
+        if self.is_method:
+            self.call_format = "{0}.{1}({2})"
+        else:
+            self.call_format = "{1}({0}, {2})"
+
+    def get_call_expr(self, args: list[Expr]) -> Expr:
+        # cringe. I should know arity ahead of time
+        if len(args) == 0:
+            first_arg = ""
+            others = ""
+        elif len(args) == 1:
+            first_arg = args[0].c_code
+            others = ""
+        else:
+            # cringe
+            if self.c_name == "Intersection" and "*" in args[1].type:
+                args[1] = Expr(c_code="*" + args[1].c_code, type="Shape")
+
+            first_arg = args[0].c_code
+            others = ", ".join([arg.c_code for arg in args[1:]])
+
+        c_code = self.call_format.format(first_arg, self.c_name, others)
+        c_code = c_code.replace(", )", ")")
+        return Expr(c_code=c_code, type=self.return_type)
 
 
 class OperatorDef:
@@ -106,15 +134,15 @@ functions = {
     "lighting": FunctionDef(True, "Colour", "lighting"),
     "intersect_world": FunctionDef(True, "Intersections", "intersect"),
     "default_world": FunctionDef(False, "World", "World::default_world"),
-    "prepare_computations": FunctionDef(True, "Intersection", "prepare_computations"),
+    "prepare_computations": FunctionDef(True, "IntersectionComps", "prepare_computations"),
     "shade_hit": FunctionDef(True, "Colour", "shade_hit"),
-    "getShape": FunctionDef(True, "Sphere", "getShape"),
+    "getShape": FunctionDef(True, "Shape*", "getShape"),
     "color_at": FunctionDef(True, "Colour", "color_at"),
     "ray_for_pixel": FunctionDef(True, "Ray", "ray_for_pixel"),
     "render": FunctionDef(True, "Canvas", "render"),
     "pixel_at": FunctionDef(True, "Colour", "pixel_at"),
     "is_shadowed": FunctionDef(True, "bool", "is_shadowed"),
-    "getLight": FunctionDef(True, "PointLight", "getLight")
+    "getLight": FunctionDef(True, "PointLight*", "getLight")
 }
 
 transformations = ["translation", "scaling", "rotation_x", "rotation_y", "rotation_z", "shearing", "view_transform"]
@@ -149,8 +177,6 @@ unary_operators = [
 terminators = [TokenType.EOF, TokenType.AND, TokenType.GIVEN, TokenType.THEN, TokenType.WHEN, TokenType.SCENARIO,
                TokenType.COMMA, TokenType.RIGHT_PAREN, TokenType.RIGHT_BRACKET, TokenType.SCENARIO_OUTLINE]
 
-Expr = namedtuple("Expr", "c_code type")
-
 variables = {
     "identity_matrix": Expr(c_code="Transformation::identity()", type="Matrix")
 }
@@ -169,7 +195,11 @@ fields = {
     ],
     "Intersection": [
         Field(name="t", type="double", is_getter=False, is_pointer=False),
-        Field(name="object", type="Sphere", is_getter=False, is_pointer=True),
+        Field(name="object", type="Shape*", is_getter=False, is_pointer=False)
+    ],
+    "IntersectionComps": [
+        Field(name="t", type="double", is_getter=False, is_pointer=False),
+        Field(name="object", type="Shape*", is_getter=False, is_pointer=False),
         Field(name="point", type="Tuple", is_getter=False, is_pointer=False),
         Field(name="normalv", type="Tuple", is_getter=False, is_pointer=False),
         Field(name="eyev", type="Tuple", is_getter=False, is_pointer=False),
@@ -183,6 +213,10 @@ fields = {
     ],
     "Intersections": [
         Field(name="count", type="double", is_getter=True, is_pointer=False)
+    ],
+    "Shape": [
+        Field(name="transform", type="Matrix", is_getter=False, is_pointer=False),
+        Field(name="material", type="Material", is_getter=False, is_pointer=False)
     ],
     "Sphere": [
         Field(name="transform", type="Matrix", is_getter=False, is_pointer=False),
@@ -272,7 +306,7 @@ def scan(src: str) -> list[Token]:
             start += 1
 
         try:
-            tokens.append(Token(TokenType.NUMBER, double(lexeme), line))
+            tokens.append(Token(TokenType.NUMBER, float(lexeme), line))
         except:
             parts = lexeme.split(".")
             for p in parts:
@@ -413,13 +447,7 @@ class Compiler:
 
                 for fname, func in functions.items():
                     if fname == name:
-                        if func.is_method:
-                            left = Expr(c_code="{}.{}({})".format(args[0].c_code, func.c_name,
-                                                                  ", ".join([arg.c_code for arg in args[1:]])),
-                                        type=func.return_type)
-                        else:
-                            left = Expr(c_code="{}({})".format(func.c_name, ", ".join([arg.c_code for arg in args])),
-                                        type=func.return_type)
+                        left = func.get_call_expr(args)
                         break
                 else:
                     if name == "intersections":  # cringe special case
@@ -443,9 +471,15 @@ class Compiler:
             if self.match(TokenType.DOT):
                 if left is None:
                     self.error("Get property on None expression")
+                if left.type is None:
+                    self.error("Get property on expression with None type: " + str(left))
+
+                field = str(self.consume(TokenType.IDENTIFIER, "Expect identifier after '.'").lexeme)
+
+                while "*" in left.type:
+                    left = Expr(c_code="(*" + left.c_code + ")", type=left.type[:-1])
 
                 obj = left.c_code
-                field = str(self.consume(TokenType.IDENTIFIER, "Expect identifier after '.'").lexeme)
                 obj_type = left.type
 
                 if obj_type in fields:
@@ -530,12 +564,17 @@ class Compiler:
                 self.line("{} {} = {};".format(right.type, left.c_code, right.c_code))
             return None
         elif operator == TokenType.EQUALITY:
-            if left.type != right.type:
-                self.error("Cannot assert equality of different types: {} and {}".format(left.type, right.type))
+            while "*" in left.type:
+                left = Expr("(*" + left.c_code + ")", left.type[:-1])
+            while "*" in right.type:
+                right = Expr("(*" + right.c_code + ")", right.type[:-1])
+
+            # if left.type != right.type:
+            #    self.error("Cannot assert equality of different types: {} and {}".format(left.type, right.type))
 
             if left.type == "double":
                 assertion = "almostEqual({}, {})".format(left.c_code, right.c_code)
-            elif left.type in ["Matrix", "Tuple", "Colour", "Sphere", "Intersection", "Material"]:
+            elif left.type in ["Matrix", "Tuple", "Colour", "Intersection", "Material", "Sphere", "Shape"]:
                 assertion = "{}.equals({})".format(left.c_code, right.c_code)
             elif left.type in ["int", "bool"]:
                 assertion = "{} == {}".format(left.c_code, right.c_code)
@@ -620,7 +659,6 @@ if __name__ == "__main__":
         run_tests += "#include \"" + file + "\"\n"
 
     run_tests += "\n// THIS FILE IS AUTOMATICALLY GENERATED. DO NOT EDIT MANUALLY. "
-
     run_tests += "\n\nint main(){\n"
     run_tests += "    long _start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();\n"
     line_count = len(run_tests.splitlines()) + 1
@@ -645,8 +683,10 @@ if __name__ == "__main__":
 
     build_start_time = time()
     print("=" * 30)
-    os.system("/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -G Ninja -S /Users/luke/Documents/mods/raytracer -B /Users/luke/Documents/mods/raytracer/cmake-build-debug")
-    os.system("/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --build /Users/luke/Documents/mods/raytracer/cmake-build-debug --target raytracer_tests -j 6")
+    os.system(
+        "/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -G Ninja -S /Users/luke/Documents/mods/raytracer -B /Users/luke/Documents/mods/raytracer/cmake-build-debug")
+    os.system(
+        "/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --build /Users/luke/Documents/mods/raytracer/cmake-build-debug --target raytracer_tests -j 6")
     print("=" * 30)
     run_start_time = time()
     os.system("/Users/luke/Documents/mods/raytracer/cmake-build-debug/raytracer_tests")

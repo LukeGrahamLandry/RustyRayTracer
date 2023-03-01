@@ -28,7 +28,7 @@ Intersections::Intersections() {
 }
 
 Intersections::Intersections(initializer_list<Intersection> group) {
-    for (Intersection i : group){
+    for (const Intersection& i : group){
         add(i);
     }
 }
@@ -46,7 +46,7 @@ void Intersections::add(const Intersection& intersection) {
     intersections.push_back(toAdd);
 }
 
-int Intersections::count() {
+int Intersections::count() const {
     return (int) intersections.size();
 }
 
@@ -82,7 +82,31 @@ void Intersections::addAll(const Intersections& hits) {
     }
 }
 
-Intersection::Intersection(double tIn, Sphere &objectIn) {
+bool Intersection::equals(const Intersection& other) const {
+    return almostEqual(t, other.t) && (object == other.object || object->equals(*other.object));
+}
+
+IntersectionComps Intersection::prepare_computations(const Ray &ray) const {
+    IntersectionComps comps;
+    comps.t = t;
+    comps.object = object;
+    comps.point = ray.position(t);
+    comps.eyev = ray.direction.negate();
+    comps.normalv = object->normal_at(comps.point);
+    comps.inside = comps.normalv.dot(comps.eyev) < 0;
+    if (comps.inside) comps.normalv = comps.normalv.negate();
+
+    // Used for is_shadowed checks to prevent shadow acne
+    comps.over_point = comps.point.add(comps.normalv.scale(EPSILON()));
+    return comps;
+}
+
+Intersection::Intersection(const Intersection &other) {
+    t = other.t;
+    object = other.object;
+}
+
+Intersection::Intersection(double tIn, Shape& objectIn) {
     t = tIn;
     object = &objectIn;
 }
@@ -90,29 +114,4 @@ Intersection::Intersection(double tIn, Sphere &objectIn) {
 Intersection::Intersection() {
     t = 0;
     object = nullptr;
-    hasPreComputed = false;
-}
-
-bool Intersection::equals(const Intersection& other) const {
-    return almostEqual(t, other.t) && (object == other.object || object->equals(*other.object));
-}
-
-Intersection& Intersection::prepare_computations(const Ray &ray) {
-    hasPreComputed = true;
-    point = ray.position(t);
-    eyev = ray.direction.negate();
-    normalv = object->normal_at(point);
-    inside = normalv.dot(eyev) < 0;
-    if (inside) normalv = normalv.negate();
-    over_point = point.add(normalv.scale(EPSILON()));
-    return *this;
-}
-
-Intersection::Intersection(const Intersection &other) {
-    t = other.t;
-    object = other.object;
-    hasPreComputed = other.hasPreComputed;
-    eyev = other.eyev;
-    normalv = other.normalv;
-    inside = other.inside;
 }

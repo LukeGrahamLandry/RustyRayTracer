@@ -16,11 +16,11 @@ public:
     Colour shade_hit(const IntersectionComps& hit) const;
     Shape* getShape(int index);
     Colour color_at(const Ray& ray) const;
-    void addLight(PointLight& light);
+    void addLight(const PointLight& light);
 
     static World default_world();
 
-    void addShape(Shape& shape);
+    void addShape(const Shape& shape);
 
     bool is_shadowed(const Tuple& point, PointLight* light) const;
 

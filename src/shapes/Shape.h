@@ -17,7 +17,8 @@ public:
     Tuple normal_at(const Tuple& point) const;
 
     Shape();
-    ~Shape() = default;
+    virtual ~Shape() = default;
+    virtual Shape* copy() const = 0;
     virtual Tuple local_normal_at(const Tuple& object_space_point) const = 0;
     virtual Intersections local_intersect(const Ray& object_space_ray) const = 0;
 

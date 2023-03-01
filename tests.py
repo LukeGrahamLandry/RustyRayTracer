@@ -20,6 +20,7 @@ class TokenType(Enum):
     NUMBER = 1
     PLUS = "+"
     STAR = "*"
+    BANG = "!"
     MINUS = "-"
     SLASH = "/"
     LEFT_PAREN = "("
@@ -142,7 +143,9 @@ functions = {
     "render": FunctionDef(True, "Canvas", "render"),
     "pixel_at": FunctionDef(True, "Colour", "pixel_at"),
     "is_shadowed": FunctionDef(True, "bool", "is_shadowed"),
-    "getLight": FunctionDef(True, "PointLight*", "getLight")
+    "getLight": FunctionDef(True, "PointLight*", "getLight"),
+    "isPoint": FunctionDef(True, "bool", "isPoint"),
+    "isVector": FunctionDef(True, "bool", "isVector")
 }
 
 transformations = ["translation", "scaling", "rotation_x", "rotation_y", "rotation_z", "shearing", "view_transform"]
@@ -170,7 +173,8 @@ for op in [TokenType.STAR, TokenType.PLUS, TokenType.SLASH, TokenType.MINUS]:
 unary_operators = [
     OperatorDef(TokenType.ROOT, "", "double", "double", "sqrt(<b>)"),
     OperatorDef(TokenType.MINUS, "", "double", "double", "-<b>"),
-    OperatorDef(TokenType.MINUS, "", "Tuple", "Tuple", "<b>.negate()")
+    OperatorDef(TokenType.MINUS, "", "Tuple", "Tuple", "<b>.negate()"),
+    OperatorDef(TokenType.BANG, "", "bool", "bool", "!<b>")
 ]
 
 # Could just keep line breaks as a token type, but I like the idea of insignificant whitespace.
@@ -181,64 +185,64 @@ variables = {
     "identity_matrix": Expr(c_code="Transformation::identity()", type="Matrix")
 }
 
-Field = namedtuple("Field", "name type is_getter is_pointer")
+Field = namedtuple("Field", "name type is_getter")
 
 fields = {
     "Colour": [
-        Field(name="red", type="double", is_getter=False, is_pointer=False),
-        Field(name="green", type="double", is_getter=False, is_pointer=False),
-        Field(name="blue", type="double", is_getter=False, is_pointer=False)
+        Field(name="red", type="double", is_getter=False),
+        Field(name="green", type="double", is_getter=False),
+        Field(name="blue", type="double", is_getter=False)
     ],
     "Ray": [
-        Field(name="origin", type="Tuple", is_getter=False, is_pointer=False),
-        Field(name="direction", type="Tuple", is_getter=False, is_pointer=False)
+        Field(name="origin", type="Tuple", is_getter=False),
+        Field(name="direction", type="Tuple", is_getter=False)
     ],
     "Intersection": [
-        Field(name="t", type="double", is_getter=False, is_pointer=False),
-        Field(name="object", type="Shape*", is_getter=False, is_pointer=False)
+        Field(name="t", type="double", is_getter=False),
+        Field(name="object", type="Shape*", is_getter=False)
     ],
     "IntersectionComps": [
-        Field(name="t", type="double", is_getter=False, is_pointer=False),
-        Field(name="object", type="Shape*", is_getter=False, is_pointer=False),
-        Field(name="point", type="Tuple", is_getter=False, is_pointer=False),
-        Field(name="normalv", type="Tuple", is_getter=False, is_pointer=False),
-        Field(name="eyev", type="Tuple", is_getter=False, is_pointer=False),
-        Field(name="inside", type="bool", is_getter=False, is_pointer=False)
+        Field(name="t", type="double", is_getter=False),
+        Field(name="object", type="Shape*", is_getter=False),
+        Field(name="point", type="Tuple", is_getter=False),
+        Field(name="normalv", type="Tuple", is_getter=False),
+        Field(name="eyev", type="Tuple", is_getter=False),
+        Field(name="inside", type="bool", is_getter=False)
     ],
     "Tuple": [
-        Field(name="x", type="double", is_getter=True, is_pointer=False),
-        Field(name="y", type="double", is_getter=True, is_pointer=False),
-        Field(name="z", type="double", is_getter=True, is_pointer=False),
-        Field(name="w", type="double", is_getter=True, is_pointer=False)
+        Field(name="x", type="double", is_getter=True),
+        Field(name="y", type="double", is_getter=True),
+        Field(name="z", type="double", is_getter=True),
+        Field(name="w", type="double", is_getter=True)
     ],
     "Intersections": [
-        Field(name="count", type="double", is_getter=True, is_pointer=False)
+        Field(name="count", type="double", is_getter=True)
     ],
     "Shape": [
-        Field(name="transform", type="Matrix", is_getter=False, is_pointer=False),
-        Field(name="material", type="Material", is_getter=False, is_pointer=False)
+        Field(name="transform", type="Matrix", is_getter=False),
+        Field(name="material", type="Material", is_getter=False)
     ],
     "Sphere": [
-        Field(name="transform", type="Matrix", is_getter=False, is_pointer=False),
-        Field(name="material", type="Material", is_getter=False, is_pointer=False)
+        Field(name="transform", type="Matrix", is_getter=False),
+        Field(name="material", type="Material", is_getter=False)
     ],
     "PointLight": [
-        Field(name="intensity", type="Colour", is_getter=False, is_pointer=False),
-        Field(name="position", type="Tuple", is_getter=False, is_pointer=False)
+        Field(name="intensity", type="Colour", is_getter=False),
+        Field(name="position", type="Tuple", is_getter=False)
     ],
     "Material": [
-        Field(name="color", type="Colour", is_getter=False, is_pointer=False),
-        Field(name="ambient", type="double", is_getter=False, is_pointer=False),
-        Field(name="diffuse", type="double", is_getter=False, is_pointer=False),
-        Field(name="specular", type="double", is_getter=False, is_pointer=False),
-        Field(name="shininess", type="double", is_getter=False, is_pointer=False)
+        Field(name="color", type="Colour", is_getter=False),
+        Field(name="ambient", type="double", is_getter=False),
+        Field(name="diffuse", type="double", is_getter=False),
+        Field(name="specular", type="double", is_getter=False),
+        Field(name="shininess", type="double", is_getter=False)
     ],
     "Camera": [
-        Field(name="hsize", type="double", is_getter=False, is_pointer=False),
-        Field(name="vsize", type="double", is_getter=False, is_pointer=False),
-        Field(name="field_of_view", type="double", is_getter=False, is_pointer=False),
-        Field(name="transform", type="Matrix", is_getter=False, is_pointer=False),
-        Field(name="pixel_size", type="double", is_getter=False, is_pointer=False)
+        Field(name="hsize", type="double", is_getter=False),
+        Field(name="vsize", type="double", is_getter=False),
+        Field(name="field_of_view", type="double", is_getter=False),
+        Field(name="transform", type="Matrix", is_getter=False),
+        Field(name="pixel_size", type="double", is_getter=False)
     ]
 }
 
@@ -488,8 +492,6 @@ class Compiler:
                             c_code = obj + "." + field
                             if option.is_getter:
                                 c_code = c_code + "()"
-                            if option.is_pointer:
-                                c_code = "(*" + c_code + ")"
 
                             left = Expr(c_code=c_code, type=option.type)
                             break
@@ -543,6 +545,9 @@ class Compiler:
             if left is not None and left.type == "void":
                 self.line(left.c_code + ";")
 
+            if left is not None and left.type == "bool":
+                self.line("_scenarioPassed = _scenarioPassed && ({});".format(left.c_code))
+
             return left
 
         if operator in [TokenType.EQUALITY, TokenType.ASSIGN] and precedence > 0:
@@ -569,6 +574,7 @@ class Compiler:
             while "*" in right.type:
                 right = Expr("(*" + right.c_code + ")", right.type[:-1])
 
+            # cringe: it should know about abstract classes
             # if left.type != right.type:
             #    self.error("Cannot assert equality of different types: {} and {}".format(left.type, right.type))
 

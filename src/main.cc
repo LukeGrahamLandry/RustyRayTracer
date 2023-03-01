@@ -1,5 +1,6 @@
 #include "demo.h"
 
 int main(){
-    chapter7();
+    window();
+    // chapter7();
 }

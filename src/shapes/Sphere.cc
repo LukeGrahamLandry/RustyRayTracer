@@ -24,3 +24,9 @@ Intersections Sphere::local_intersect(const Ray& ray) const {
     return locations;
 }
 
+Shape* Sphere::copy() const {
+    Sphere* shape = new Sphere();
+    shape->material = material;
+    shape->set_transform(transform);
+    return shape;
+}

@@ -14,7 +14,9 @@ void chapter4();
 void chapter5();
 void chapter6();
 void chapter7();
+World chapter7_world();
 void test();
 void lights();
+void window();
 
 #endif

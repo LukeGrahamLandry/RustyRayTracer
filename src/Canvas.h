@@ -11,6 +11,8 @@ public:
     const Colour& pixel_at(int x, int y) const;
     string to_ppm() const;
     void write_ppm(const char *path) const;
+    static int clamp_rgb(double x);
+
 private:
     int width;
     int height;

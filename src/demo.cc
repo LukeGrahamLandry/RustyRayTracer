@@ -1,4 +1,5 @@
 #include "demo.h"
+#include <SDL2/SDL.h>
 
 void chapter4(){
     double degToRad = M_PI / 180;
@@ -111,9 +112,7 @@ void chapter6() {
     screen.write_ppm("chapter6.ppm");
 }
 
-
-
-void chapter7() {
+World chapter7_world(){
     Sphere floor;
     floor.set_transform(Transformation::scaling(10, 0.01, 10));
     floor.material.color = Colour(1, 0.9, 0.9);
@@ -121,17 +120,17 @@ void chapter7() {
 
     Sphere left_wall;
     left_wall.set_transform(Transformation::translation(0, 0, 5)
-                    .multiply(Transformation::rotation_y(-M_PI/4))
-                    .multiply(Transformation::rotation_x(M_PI/2))
-                    .multiply(Transformation::scaling(10, 0.01, 10))
-                    );
+                                    .multiply(Transformation::rotation_y(-M_PI/4))
+                                    .multiply(Transformation::rotation_x(M_PI/2))
+                                    .multiply(Transformation::scaling(10, 0.01, 10))
+    );
     left_wall.material = floor.material;
 
     Sphere right_wall;
     right_wall.set_transform(Transformation::translation(0, 0, 5)
-                                    .multiply(Transformation::rotation_y(M_PI/4))
-                                    .multiply(Transformation::rotation_x(M_PI/2))
-                                    .multiply(Transformation::scaling(10, 0.01, 10))
+                                     .multiply(Transformation::rotation_y(M_PI/4))
+                                     .multiply(Transformation::rotation_x(M_PI/2))
+                                     .multiply(Transformation::scaling(10, 0.01, 10))
     );
     right_wall.material = floor.material;
 
@@ -140,6 +139,7 @@ void chapter7() {
     middle.material.color = Colour(0.1, 1, 0.5);
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
+    middle.material.shininess = 100;
 
     Sphere right;
     right.set_transform(Transformation::translation(1.5, 0.5, -0.5).multiply(Transformation::scaling(0.5, 0.5, 0.5)));
@@ -160,20 +160,24 @@ void chapter7() {
     PointLight light = PointLight(light_pos, Colour(1, 1, 1));
     world.addLight(light);
 
-    world.addShape(floor);
-    world.addShape(right_wall);
-    world.addShape(left_wall);
+//    world.addShape(floor);
+//    world.addShape(right_wall);
+//    world.addShape(left_wall);
     world.addShape(middle);
     world.addShape(right);
     world.addShape(left);
 
-    int resolution_factor = 2;
+    return world;
+}
+
+void chapter7() {
+    int resolution_factor = 10;
     Camera camera = Camera(100 * resolution_factor, 50 * resolution_factor, M_PI/3, true);
     Matrix perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
     perspective = perspective.multiply(Transformation::translation(0, 0, 1));
     camera.set_transform(perspective);
 
-    Canvas screen = camera.render(world);
+    Canvas screen = camera.render(chapter7_world());
     screen.write_ppm("chapter7.ppm");
 }
 
@@ -248,4 +252,82 @@ void lights() {
 
     Canvas screen = camera.render(world);
     screen.write_ppm("lights.ppm");
+}
+
+void window(){
+    int resolution = 400;
+    SDL_Event event;
+    SDL_Renderer *renderer;
+    SDL_Window *window;
+
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_CreateWindowAndRenderer(resolution, resolution, 0, &window, &renderer);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
+    SDL_RenderPresent(renderer);
+
+    Camera camera = Camera(resolution, resolution, M_PI/3, true);
+    Matrix perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
+    perspective = perspective.multiply(Transformation::translation(0, 0, 1));
+    camera.set_transform(perspective);
+
+    long start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
+    Canvas canvas = Canvas(resolution, resolution);
+
+    World world = chapter7_world();
+    vector<vector<thread>> threads;
+
+    RenderState progress = RenderState(500, [&](int xx) -> void {
+        if (progress.count >= resolution){
+            long end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
+            cout << "Rendered " << (resolution * resolution) << " pixels in " << (end_time - start_time) << " ms." << endl;
+        }
+    });
+
+    threads.push_back(camera.startRender(canvas, world, progress));
+
+
+    int ms_per_frame = 100;
+    long next_frame_time = 0;
+    int ii = 0;
+    int d = 1;
+    int z = 0;
+    while (1) {
+        long time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
+        if (time > next_frame_time){
+            for (int x=0;x<resolution;x++){
+                for (int y=0;y<resolution;y++){
+                    Colour c = canvas.pixel_at(x, y);
+                    SDL_SetRenderDrawColor(renderer, Canvas::clamp_rgb(c.red), Canvas::clamp_rgb(c.green), Canvas::clamp_rgb(c.blue), 255);
+                    SDL_RenderDrawPoint(renderer, x, y);
+                }
+            }
+            SDL_RenderPresent(renderer);
+            next_frame_time = time + ms_per_frame;
+            z++;
+
+
+            ii += d;
+            perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
+            perspective = perspective.multiply(Transformation::translation((float) ii / 10.0, 0, 1));
+            camera.set_transform(perspective);
+            if (ii > 20 || ii < -20) {
+                d = d * -1;
+            }
+            start_time = time;
+            threads.push_back(camera.startRender(canvas, world, progress));
+        }
+
+        if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
+            exit(0);
+    }
+    for (vector<thread>& tt : threads){
+        for (thread& t : tt){
+            t.join();
+        }
+    }
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }

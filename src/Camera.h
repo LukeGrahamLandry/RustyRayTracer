@@ -5,6 +5,25 @@
 #include "World.h"
 #include "Canvas.h"
 #include "common.h"
+#include <thread>
+
+struct RenderState {
+    int count;
+    long next_log_time;
+    long start_time;
+    long end_time;
+    int log_interval_ms;
+    function<void(int x)> callback;
+
+    RenderState(int log_interval_ms, const function<void(int x)>& callback){
+        next_log_time = -1;
+        start_time = -1;
+        end_time = -1;
+        count = 0;
+        this->callback = callback;
+        this->log_interval_ms = log_interval_ms;
+    }
+};
 
 class Camera {
 public:
@@ -26,8 +45,13 @@ public:
 
     Ray ray_for_pixel(int x, int y) const;
     Canvas render(const World& world) const;
+    vector<thread> startRender(Canvas& canvas, const World& world, RenderState& progress) const;
+
+    void renderSlice(const World& world, Canvas& canvas, int xStart, int xEnd, RenderState& progress) const;
+
 private:
     const bool do_progress_logging;
+    static int log_interval_ms;
 };
 
 

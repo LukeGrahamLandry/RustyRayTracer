@@ -38,7 +38,7 @@ const Colour & Canvas::pixel_at(int x, int y) const {
     return pixels[x][y];
 }
 
-inline int clamp_rgb(double x){
+int Canvas::clamp_rgb(double x){
     if (x < 0) return 0;
     if (x > 1) return 255;
     return (int) (x * 255);

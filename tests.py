@@ -111,6 +111,7 @@ class OperatorDef:
 keywords = {e.value: e for e in TokenType if isinstance(e.value, str)}
 functions = {
     "color": FunctionDef(False, "Colour", "Colour"),
+    "plane": FunctionDef(False, "Plane", "Plane"),
     "point_light": FunctionDef(False, "PointLight", "PointLight"),
     "material": FunctionDef(False, "Material", "Material"),
     "camera": FunctionDef(False, "Camera", "Camera"),
@@ -145,14 +146,16 @@ functions = {
     "is_shadowed": FunctionDef(True, "bool", "is_shadowed"),
     "getLight": FunctionDef(True, "PointLight*", "getLight"),
     "isPoint": FunctionDef(True, "bool", "isPoint"),
-    "isVector": FunctionDef(True, "bool", "isVector")
+    "isVector": FunctionDef(True, "bool", "isVector"),
+    "local_normal_at": FunctionDef(True, "Tuple", "local_normal_at"),
+    "local_intersect": FunctionDef(True, "Intersections", "local_intersect")
 }
 
 transformations = ["translation", "scaling", "rotation_x", "rotation_y", "rotation_z", "shearing", "view_transform"]
 for name in transformations:
     functions[name] = FunctionDef(False, "Matrix", "Transformation::" + name)
 
-includes = ["common.h", "Matrix.h", "Tuple.h", "Colour.h", "Canvas.h", "Ray.h", "World.h", "Camera.h"]
+includes = ["common.h", "Matrix.h", "Tuple.h", "Colour.h", "Canvas.h", "Ray.h", "World.h", "Camera.h", "shapes/Plane.h"]
 
 binary_operators = [
     OperatorDef(TokenType.STAR, "Matrix", "Matrix", "Matrix", "<a>.multiply(<b>)"),
@@ -223,6 +226,10 @@ fields = {
         Field(name="material", type="Material", is_getter=False)
     ],
     "Sphere": [
+        Field(name="transform", type="Matrix", is_getter=False),
+        Field(name="material", type="Material", is_getter=False)
+    ],
+    "Plane": [
         Field(name="transform", type="Matrix", is_getter=False),
         Field(name="material", type="Material", is_getter=False)
     ],

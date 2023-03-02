@@ -1,5 +1,6 @@
 #include "demo.h"
 #include <SDL2/SDL.h>
+#include "shapes/Plane.h"
 
 void chapter4(){
     double degToRad = M_PI / 180;
@@ -160,9 +161,19 @@ World chapter7_world(){
     PointLight light = PointLight(light_pos, Colour(1, 1, 1));
     world.addLight(light);
 
-    world.addShape(floor);
-    world.addShape(right_wall);
-    world.addShape(left_wall);
+    // world.addShape(floor);
+    // world.addShape(right_wall);
+    // world.addShape(left_wall);
+
+    Plane floor_plane;
+    world.addShape(floor_plane);
+
+    Plane wall_plane;
+    wall_plane.set_transform(Transformation::translation(0, 0, 30).multiply(Transformation::rotation_x(M_PI / 2)));
+    wall_plane.material.color = Colour(1, 0, 0);
+    wall_plane.material.specular = 0;
+    world.addShape(wall_plane);
+
     world.addShape(middle);
     world.addShape(right);
     world.addShape(left);
@@ -255,7 +266,7 @@ void lights() {
 }
 
 void window(){
-    int resolution = 400;
+    int resolution = 500;
     SDL_Event event;
     SDL_Renderer *renderer;
     SDL_Window *window;
@@ -275,8 +286,9 @@ void window(){
 
     RenderTask worker = RenderTask(world, camera);
     worker.start();
+    // worker.waitForEnd();
 
-    int ms_per_frame = 500;
+    int ms_per_frame = 300;
     long next_frame_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
     int ii = 0;
     int d = 1;

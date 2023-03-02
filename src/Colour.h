@@ -21,4 +21,4 @@ public:
 };
 
 
-#endif //RAYTRACER_COLOUR_H
+#endif

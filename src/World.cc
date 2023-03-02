@@ -49,7 +49,7 @@ bool World::is_shadowed(const Tuple& point, PointLight* light) const {
 Colour World::shade_hit(const IntersectionComps& hit) const {
     Colour total;
     for (PointLight* light : lights){
-        Colour current = hit.object->material.lighting(*light, hit.point, hit.eyev, hit.normalv, is_shadowed(hit.over_point, light));
+        Colour current = hit.object->material.lighting(*light, hit.object, hit.point, hit.eyev, hit.normalv, is_shadowed(hit.over_point, light));
         total = total.add(current);
     }
     return total;

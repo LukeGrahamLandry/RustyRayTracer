@@ -11,15 +11,17 @@ Material::Material() {
     diffuse = 0.9;
     specular = 0.9;
     shininess = 200.0;
+    pattern = nullptr;
 }
 
-Colour Material::lighting(const PointLight& light, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector) const {
-    return lighting(light, position, eye_vector, normal_vector, false);
+Colour Material::lighting(const PointLight& light, Shape* object, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector) const {
+    return lighting(light, object, position, eye_vector, normal_vector, false);
 }
 
-Colour Material::lighting(const PointLight& light, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector, bool in_shadow) const {
-    Colour base_colour = color.multiply(light.intensity);
-    Colour ambient_colour = color.scale(ambient);
+Colour Material::lighting(const PointLight& light, Shape* object, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector, bool in_shadow) const {
+    Colour object_color = pattern == nullptr ? color : pattern->pattern_at(object, position);
+    Colour base_colour = object_color.multiply(light.intensity);
+    Colour ambient_colour = object_color.scale(ambient);
 
     if (in_shadow) return ambient_colour;
 
@@ -44,5 +46,10 @@ Colour Material::lighting(const PointLight& light, const Tuple& position, const 
 }
 
 bool Material::equals(const Material& other) const {
+    // TODO: include pattern
     return color.equals(other.color) && almostEqual(ambient, other.ambient) && almostEqual(diffuse, other.diffuse) && almostEqual(specular, other.specular) && almostEqual(shininess, other.shininess);
+}
+
+void Material::setPattern(const Pattern& p) {
+    pattern = p.copy();
 }

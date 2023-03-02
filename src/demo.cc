@@ -99,7 +99,7 @@ void chapter6() {
             if (hit.hasHit()){
                 Tuple point_on_sphere = ray.position(hit.hit().t);
                 Tuple normal = sphere.normal_at(point_on_sphere);
-                Colour colour = sphere.material.lighting(light, point_on_sphere, ray_direction.negate(), normal);
+                Colour colour = sphere.material.lighting(light, &sphere, point_on_sphere, ray_direction.negate(), normal);
 
                 screen.write_pixel(x, y, colour);
             } else {
@@ -135,12 +135,16 @@ World chapter7_world(){
     );
     right_wall.material = floor.material;
 
+    GradientPattern lerped = GradientPattern(Colour(1, 0, 0), Colour(0, 0, 1));
+    lerped.transform = Transformation::translation(-0.5, 0, 0);
+
     Sphere middle;
     middle.set_transform(Transformation::translation(-0.5, 1, 0.5));
-    middle.material.color = Colour(0.1, 1, 0.5);
+    // middle.material.color = Colour(0.1, 1, 0.5);
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
     middle.material.shininess = 100;
+    middle.material.setPattern(lerped);
 
     Sphere right;
     right.set_transform(Transformation::translation(1.5, 0.5, -0.5).multiply(Transformation::scaling(0.5, 0.5, 0.5)));
@@ -165,13 +169,33 @@ World chapter7_world(){
     // world.addShape(right_wall);
     // world.addShape(left_wall);
 
+    // lerped.transform = Transformation::translation(5, 0, 0).multiply(Transformation::scaling(10, 1, 1).multiply(Transformation::identity()));
+    lerped.transform = Transformation::identity().multiply(Transformation::scaling(1, 1, 1).multiply(Transformation::rotation_y(0)));
+
+    RepeatingPattern book_lerped = RepeatingPattern(lerped);
+    book_lerped.transform = Transformation::scaling(2, 1, 1);
+
     Plane floor_plane;
+    floor_plane.material.setPattern(book_lerped);
     world.addShape(floor_plane);
 
+    StripePattern simple_stripes = StripePattern(Colour(1, 0, 0), Colour(0, 1, 0));
+    simple_stripes.transform = Transformation::rotation_y(M_PI / 2);
+
+    StripePattern fancy_vertical = StripePattern(simple_stripes, SolidPattern(Colour(0, 0, 1)));
+    fancy_vertical.transform = Transformation::rotation_y(M_PI / 4).multiply(Transformation::scaling(5, 1, 1));
+
+
+    fancy_vertical.transform = fancy_vertical.transform.multiply(Transformation::scaling(0.1, 0.1, 0.1));
+    RepeatingPattern repeat_stripes = RepeatingPattern(fancy_vertical);
+    repeat_stripes.transform = Transformation::scaling(5, 5, 5);
+
+
     Plane wall_plane;
-    wall_plane.set_transform(Transformation::translation(0, 0, 30).multiply(Transformation::rotation_x(M_PI / 2)));
+    wall_plane.set_transform(Transformation::translation(0, 0, 30).multiply(Transformation::rotation_x(M_PI / 2).multiply(Transformation::scaling(2, 2, 2))));
     wall_plane.material.color = Colour(1, 0, 0);
     wall_plane.material.specular = 0;
+    wall_plane.material.setPattern(repeat_stripes);
     world.addShape(wall_plane);
 
     world.addShape(middle);
@@ -286,7 +310,8 @@ void window(){
 
     RenderTask worker = RenderTask(world, camera);
     worker.start();
-    // worker.waitForEnd();
+
+    worker.waitForEnd();
 
     int ms_per_frame = 300;
     long next_frame_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();

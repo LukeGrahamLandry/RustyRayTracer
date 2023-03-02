@@ -1,7 +1,5 @@
 #include "Camera.h"
 
-int Camera::log_interval_ms = 300;
-
 Camera::Camera(int hsize, int vsize, double field_of_view, bool do_progress_logging) : hsize{hsize}, vsize{vsize}, field_of_view{field_of_view}, do_progress_logging{do_progress_logging} {
     set_transform(Transformation::identity());
     double half_view = tan(field_of_view / 2);
@@ -31,60 +29,101 @@ Ray Camera::ray_for_pixel(int x, int y) const {
 }
 
 Canvas Camera::render(const World& world) const {
-    Canvas canvas = Canvas(hsize, vsize);
-
-    RenderState progress = RenderState(log_interval_ms, [&](int unused) -> void {
-        if (do_progress_logging) cout << progress.count << "/" << hsize << endl;
-    });
-
-    vector<thread> threads = startRender(canvas, world, progress);
-    for (thread& t : threads){
-        t.join();
-    }
-
-    long end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-    if (do_progress_logging) {
-        cout << "Rendered " << (hsize * vsize) << " pixels in " << (end_time - progress.start_time) << " ms." << endl;
-    }
-
-    return canvas;
+    RenderTask renderer = RenderTask(world, *this);
+    renderer.start();
+    renderer.waitForEnd();
+    return renderer.getCanvas();
 }
 
-vector<thread> Camera::startRender(Canvas& canvas, const World &world, RenderState& progress) const {
-    int thread_count = max((int) thread::hardware_concurrency(), 1);
-    int slice_width = hsize / thread_count;
-    int extra = hsize - (slice_width * thread_count);
+RenderTask::RenderTask(const World& world, const Camera& camera) : world{world}, camera{camera} {
+    end_time = start_time = 0;
+    active = killed = false;
+    finished_count = frameIndex = 0;
+    setThreadCount((int) thread::hardware_concurrency() + 1);
+    setResolution(camera.hsize, camera.vsize);
+}
 
-    progress.start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-    progress.next_log_time = progress.start_time + progress.log_interval_ms;
-    if (do_progress_logging) cout << "Rendering " << (hsize * vsize) << " pixels with " << thread_count << " threads" << endl;
+void RenderTask::start() {
+    if (active) {
+        error() << "Cannot restart render task while threads active." << endl;
+        return;
+    }
+
+    int slice_width = camera.hsize / (thread_count - 1);
+    int extra = camera.hsize - (slice_width * (thread_count - 1));
+
+    start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
+    if (camera.do_progress_logging) cout << "Rendering " << (camera.hsize * camera.vsize) << " pixels with " << thread_count << " threads." << endl;
+
+    finished_count = 0;
+    active = true;
 
     // TODO: don't have continuous blocks so its less likely that the edge ones get mostly black
-    vector<thread> threads;
-    for (int t=0;t<thread_count;t++){
-        threads.emplace_back(&Camera::renderSlice, this, ref(world), ref(canvas), t * slice_width, (t + 1) * slice_width, ref(progress));
+    for (int t=0;t<thread_count-1;t++){
+        threads[t] = thread(&RenderTask::renderSlice, ref(*this), t * slice_width, (t + 1) * slice_width);
     }
-    threads.emplace_back(&Camera::renderSlice, this, ref(world), ref(canvas), hsize - extra, hsize, ref(progress));
-
-    return threads;
+    threads[thread_count-1] = thread(&RenderTask::renderSlice, ref(*this), camera.hsize - extra, camera.hsize);
 }
 
 
-void Camera::renderSlice(const World &world, Canvas &canvas, int xStart, int xEnd, RenderState& progress) const {
-    int step = 3;
+void RenderTask::renderSlice(int xStart, int xEnd)  {
+    int step = 4;
 
     for (int lx=0;lx<step;lx++){
         for (int ly=0;ly<step;ly++){
             for (int x=xStart+lx;x<xEnd;x+=step){
-                for (int y=ly;y<vsize;y+=step){
-                    Ray ray = ray_for_pixel(x, y);
+                for (int y=ly;y<camera.vsize;y+=step){
+                    Ray ray = camera.ray_for_pixel(x, y);
                     Colour colour = world.color_at(ray);
-                    canvas.write_pixel(x, y, colour);
+                    if (killed) return;
+                    canvas->write_pixel(x, y, colour);
                 }
             }
         }
     }
 
-    progress.count += xEnd - xStart;
-    progress.callback(0);
+    finished_count += xEnd - xStart;
+
+    if (isDone()){
+        end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
+        if (camera.do_progress_logging) cout << "Rendered " << (camera.hsize * camera.vsize) << " pixels in " << (end_time - start_time) << " ms." << endl;
+    }
+}
+
+void RenderTask::halt() {
+    killed = true;
+    waitForEnd();
+    killed = false;
+}
+
+void RenderTask::setResolution(int w, int h) {
+    if (active) {
+        error() << "Cannot set render task resolution while threads active." << endl;
+        return;
+    }
+    canvas = new Canvas(w, h);
+}
+
+void RenderTask::waitForEnd() {
+    if (!active) return;
+    for (int t=0;t<thread_count;t++){
+        threads[t].join();
+    }
+    active = false;
+    frameIndex++;
+}
+
+void RenderTask::setThreadCount(int x) {
+    if (active) {
+        error() << "Cannot set render task thread count while threads active." << endl;
+        return;
+    }
+
+    thread_count = x;
+    threads = new thread[thread_count];
+}
+
+RenderTask::~RenderTask() {
+    halt();
+    delete [] threads;
 }

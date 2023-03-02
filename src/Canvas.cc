@@ -66,3 +66,25 @@ void Canvas::write_ppm(const char* path) const {
     myfile << s;
     myfile.close();
 }
+
+Canvas::Canvas(const Canvas& other) {
+    cout << "Deep copy canvas" << endl;
+    width = other.width;
+    height = other.height;
+
+    pixels = new Colour*[width];
+    for (int i=0;i<width;i++){
+        pixels[i] = new Colour[height];
+    }
+
+    for (int i=0;i<width;i++){
+        memcpy(pixels[i], other.pixels[i], height * sizeof(Colour));
+    }
+}
+
+// Useless but lets me make an array of them.
+Canvas::Canvas() {
+    width = 0;
+    height = 0;
+    pixels = nullptr;
+}

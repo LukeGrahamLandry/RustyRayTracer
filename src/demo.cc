@@ -160,9 +160,9 @@ World chapter7_world(){
     PointLight light = PointLight(light_pos, Colour(1, 1, 1));
     world.addLight(light);
 
-//    world.addShape(floor);
-//    world.addShape(right_wall);
-//    world.addShape(left_wall);
+    world.addShape(floor);
+    world.addShape(right_wall);
+    world.addShape(left_wall);
     world.addShape(middle);
     world.addShape(right);
     world.addShape(left);
@@ -271,33 +271,25 @@ void window(){
     perspective = perspective.multiply(Transformation::translation(0, 0, 1));
     camera.set_transform(perspective);
 
-    long start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-    Canvas canvas = Canvas(resolution, resolution);
-
     World world = chapter7_world();
-    vector<vector<thread>> threads;
 
-    RenderState progress = RenderState(500, [&](int xx) -> void {
-        if (progress.count >= resolution){
-            long end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-            cout << "Rendered " << (resolution * resolution) << " pixels in " << (end_time - start_time) << " ms." << endl;
-        }
-    });
+    RenderTask worker = RenderTask(world, camera);
+    worker.start();
 
-    threads.push_back(camera.startRender(canvas, world, progress));
-
-
-    int ms_per_frame = 100;
-    long next_frame_time = 0;
+    int ms_per_frame = 500;
+    long next_frame_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
     int ii = 0;
     int d = 1;
     int z = 0;
+
+    bool doMoreFrames = true;
+
     while (1) {
         long time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-        if (time > next_frame_time){
+        if (time > next_frame_time && doMoreFrames){
             for (int x=0;x<resolution;x++){
                 for (int y=0;y<resolution;y++){
-                    Colour c = canvas.pixel_at(x, y);
+                    Colour c = worker.getCanvas().pixel_at(x, y);
                     SDL_SetRenderDrawColor(renderer, Canvas::clamp_rgb(c.red), Canvas::clamp_rgb(c.green), Canvas::clamp_rgb(c.blue), 255);
                     SDL_RenderDrawPoint(renderer, x, y);
                 }
@@ -306,25 +298,35 @@ void window(){
             next_frame_time = time + ms_per_frame;
             z++;
 
-
-            ii += d;
-            perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
-            perspective = perspective.multiply(Transformation::translation((float) ii / 10.0, 0, 1));
-            camera.set_transform(perspective);
-            if (ii > 20 || ii < -20) {
-                d = d * -1;
+            if (worker.isDone()) {
+                doMoreFrames = false;
+                worker.waitForEnd();
             }
-            start_time = time;
-            threads.push_back(camera.startRender(canvas, world, progress));
+
+            cout << z << endl;
+            if (z > 10){
+                z = 0;
+                ii += d;
+
+                cout << "start new image" << endl;
+                worker.halt();
+
+                perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
+                perspective = perspective.multiply(Transformation::translation((float) ii / 10.0, 0, 1));
+                camera.set_transform(perspective);
+                if (ii > 20 || ii < -20) {
+                    d = d * -1;
+                }
+
+                worker.start();
+            }
+
         }
+
+        if (!doMoreFrames) SDL_Delay(200);
 
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
-            exit(0);
-    }
-    for (vector<thread>& tt : threads){
-        for (thread& t : tt){
-            t.join();
-        }
+            break;
     }
 
     SDL_DestroyRenderer(renderer);

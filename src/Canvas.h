@@ -5,8 +5,10 @@
 
 class Canvas {
 public:
+    Canvas();
     Canvas(int width, int height);
     ~Canvas();
+    Canvas(const Canvas& other);
     void write_pixel(int x, int y, const Colour& pixel);
     const Colour& pixel_at(int x, int y) const;
     string to_ppm() const;

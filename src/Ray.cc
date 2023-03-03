@@ -24,7 +24,7 @@ Ray Ray::transform(const Matrix& transformation) const {
 }
 
 Intersections::Intersections() {
-
+    intersections.reserve(5);
 }
 
 Intersections::Intersections(initializer_list<Intersection> group) {

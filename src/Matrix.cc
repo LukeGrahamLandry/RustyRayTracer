@@ -6,6 +6,7 @@ Matrix::Matrix(): Matrix(Tuple(), Tuple(), Tuple(), Tuple()) {
 
 Matrix::Matrix(Tuple c1, Tuple c2, Tuple c3, Tuple c4) {
     size = 4;
+
     setCol(0, c1);
     setCol(1, c2);
     setCol(2, c3);
@@ -100,12 +101,7 @@ void Matrix::print() const {
 Matrix Matrix::inverse() const {
     double det = determinant();
 
-#ifdef DEBUG_CHECKS
-    if (det == 0) {
-        error() << "One does not simply invert the un-invertible" << endl;
-        return Matrix();
-    }
-#endif
+    if (det == 0) throw runtime_error("Matrix is not invertible");
 
     Matrix result;
     result.size = size;
@@ -119,11 +115,7 @@ Matrix Matrix::inverse() const {
 
 Matrix::Matrix(const Matrix &other) {
     size = other.size;
-    for (int r=0;r<other.size;r++){
-        for (int c=0;c<other.size;c++) {
-            set(r, c, other.get(r, c));
-        }
-    }
+    memcpy(values, other.values, sizeof(double) * 16);
 }
 
 Matrix Matrix::fromRows(const Tuple& r1, const Tuple& r2, const Tuple& r3, const Tuple& r4){

@@ -5,7 +5,7 @@
 
 class Matrix {
 private:
-    Tuple columns[4];
+    double values[16];
     int size;
 public:
     Matrix();
@@ -33,20 +33,11 @@ public:
 
     Matrix static fromRows(const Tuple& r1, const Tuple& r2, const Tuple& r3, const Tuple& r4);
 
-    double cofactor(int row, int col) const{
+    double cofactor(int row, int col) const {
         return submatrix(row, col).determinant() * ((double) ((row + col) % 2 == 0 ? 1 : -1));
     }
     bool invertible() const {
         return determinant() != 0;
-    }
-
-    const Tuple& getCol(int col) const {
-#ifdef DEBUG_CHECKS
-        if (col < 0 || col >= size) {
-            error() << "One does not simply get columns outside the matrix." << endl;
-        }
-#endif
-        return columns[col];
     }
 
     double get(int row, int col) const {
@@ -55,7 +46,7 @@ public:
             error() << "One does not simply get rows outside the matrix." << endl;
         }
 #endif
-        return getCol(col).get(row);
+        return values[row * 4 + col];
     }
 
     void set(int row, int col, double value){
@@ -64,14 +55,16 @@ public:
             error() << "One does not simply set rows outside the matrix." << endl;
         }
 #endif
-        columns[col].set(row, value);
+        values[row * 4 + col] = value;
     }
 
     void setCol(int col, const Tuple& vector){
 #ifdef DEBUG_CHECKS
         if (col < 0 || col >= size) error() << "One does not simply set columns outside the matrix." << endl;
 #endif
-        columns[col] = vector;  // this does the copy so the version in the array isn't const anymore
+        for (int i=0;i<4;i++){
+            set(i, col, vector.get(i));
+        }
     }
 };
 

@@ -116,9 +116,7 @@ void Tuple::print() const {
 }
 
 Tuple::Tuple(const Tuple &other) {
-    for (int i=0;i<4;i++){
-        set(i, other.get(i));
-    }
+    memcpy(values, other.values, 4 * sizeof(double));
 }
 
 Tuple Tuple::reflect(const Tuple& normal) const {

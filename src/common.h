@@ -5,6 +5,7 @@
 #define COMMON_H
 
 #define DEBUG_CHECKS
+#undef DEBUG_CHECKS
 
 using namespace std;
 

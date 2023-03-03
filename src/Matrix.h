@@ -111,10 +111,10 @@ public:
     MemoMatrix(Tuple c1, Tuple c2, Tuple c3, Tuple c4) : Matrix(c1, c2, c3, c4) {
         memoize();
     }
-    Matrix transpose_of_inverse() const {
+    const Matrix& transpose_of_inverse() const {
         return memo_transpose_of_inverse;
     }
-    Matrix inverse() const {
+    const Matrix& inverse() const {
         return memo_inverse;
     }
     void set(int row, int col, double value){

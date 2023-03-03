@@ -5,6 +5,12 @@ Intersections Shape::intersect(const Ray& world_space_ray) const {
     return local_intersect(ray);
 }
 
+void Shape::intersect(const Ray& world_space_ray, Intersections& locations) const {
+    Ray ray = world_space_ray.transform(transform.inverse());
+    local_intersect(ray, locations);
+}
+
+
 bool Shape::equals(const Shape& Shape) const {
     return transform.equals(Shape.transform);
 }
@@ -23,4 +29,10 @@ Tuple Shape::normal_at(const Tuple& world_space_point) const {
 
 Shape::Shape() {
     set_transform(Transformation::identity());
+}
+
+Intersections Shape::local_intersect(const Ray &object_space_ray) const {
+    Intersections locations;
+    local_intersect(object_space_ray, locations);
+    return locations;
 }

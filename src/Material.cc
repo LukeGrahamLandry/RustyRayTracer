@@ -14,12 +14,12 @@ Material::Material() {
     pattern = nullptr;
 }
 
-Colour Material::lighting(const PointLight& light, Shape* object, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector) const {
-    return lighting(light, object, position, eye_vector, normal_vector, false);
+Colour Material::lighting(const PointLight& light, Shape* object, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector, bool in_shadow) const {
+    if (pattern == nullptr) return lighting(light, position, eye_vector, normal_vector, in_shadow, color);
+    else return lighting(light, position, eye_vector, normal_vector, in_shadow, pattern->pattern_at(object, position));
 }
 
-Colour Material::lighting(const PointLight& light, Shape* object, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector, bool in_shadow) const {
-    Colour object_color = pattern == nullptr ? color : pattern->pattern_at(object, position);
+Colour Material::lighting(const PointLight& light, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector, bool in_shadow, const Colour& object_color) const {
     Colour base_colour = object_color.multiply(light.intensity);
     Colour ambient_colour = object_color.scale(ambient);
 

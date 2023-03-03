@@ -42,7 +42,6 @@ void Intersections::add(const Intersection& intersection) {
             toAdd = current;
         }
     }
-
     intersections.push_back(toAdd);
 }
 
@@ -50,21 +49,18 @@ int Intersections::count() const {
     return (int) intersections.size();
 }
 
-Intersection Intersections::get(int index) {
+const Intersection& Intersections::get(int index) {
     return *intersections[index];
 }
 
-Intersection Intersections::hit() {
+const Intersection& Intersections::hit() {
     for (int i=0;i<intersections.size();i++){
         if (intersections[i]->t >= 0){
             return *intersections[i];
         }
     }
 
-#ifdef DEBUG_CHECKS
-    error() << "One does not simply hit the unhittable." << endl;
-#endif
-    return Intersection();
+    throw runtime_error("You must check hasHit before calling Intersections::hit");
 }
 
 bool Intersections::hasHit() {  // Inefficient that <hit> has to do the loop again

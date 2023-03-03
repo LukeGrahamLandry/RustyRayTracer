@@ -12,7 +12,12 @@ public:
     World();
     ~World();
 
-    Intersections intersect(const Ray& ray) const;
+    Intersections intersect(const Ray& ray) const {
+        Intersections hits;
+        intersect(ray, hits);
+        return hits;
+    }
+    void intersect(const Ray& ray, Intersections& intersections) const;
     Colour shade_hit(const IntersectionComps& hit) const;
     Shape* getShape(int index);
     Colour color_at(const Ray& ray) const;

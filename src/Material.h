@@ -17,21 +17,27 @@ class Pattern;
 class Material {
 public:
     Colour color;
-
-    double ambient;
-    double diffuse;
-    double specular;
-
+    double ambient;   // 0 to 1
+    double diffuse;   // 0 to 1
+    double specular;  // 0 to 1
     double shininess;
-
     Pattern* pattern;
 
     Material();
-    Colour lighting(const PointLight& light, Shape* object, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector) const;
-    Colour lighting(const PointLight& light, Shape* object, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector, bool in_shadow) const;
-
     void setPattern(const Pattern& p);
     bool equals(const Material& material) const;
+
+    // Does the actual work.
+    Colour lighting(const PointLight& light, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector, bool in_shadow, const Colour& object_color) const;
+
+    // For normal usage
+    Colour lighting(const PointLight& light, Shape* object, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector, bool in_shadow=false) const;
+
+    // For tests before introducing shadows or patterns.
+    Colour lighting(const PointLight& light, const Tuple& position, const Tuple& eye_vector, const Tuple& normal_vector, bool in_shadow=false) const {
+        return lighting(light, position, eye_vector, normal_vector, in_shadow, color);
+    }
+
 };
 
 #include "shapes/Shape.h"

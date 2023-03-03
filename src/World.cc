@@ -29,19 +29,17 @@ World World::default_world() {
     return world;
 }
 
-Intersections World::intersect(const Ray &ray) const {
-    Intersections result;
+void World::intersect(const Ray &ray, Intersections& result) const {
     for (Shape* obj : objects){
-        result.addAll(obj->intersect(ray));
+        obj->intersect(ray, result);
     }
-
-    return result;
 }
 
 bool World::is_shadowed(const Tuple& point, PointLight* light) const {
     Tuple light_direction = light->position.subtract(point);
     Ray ray = Ray(point, light_direction.normalize());
-    Intersections hits = intersect(ray);
+    Intersections hits;
+    intersect(ray, hits);
     // Make sure the hit is not behind the light.
     return hits.hasHit() && hits.hit().t < light_direction.magnitude();
 }
@@ -64,7 +62,8 @@ PointLight* World::getLight(int index) {
 }
 
 Colour World::color_at(const Ray &ray) const {
-    Intersections hits = intersect(ray);
+    Intersections hits;
+    intersect(ray, hits);
     if (!hits.hasHit()) return Colour();
     IntersectionComps hit = hits.hit().prepare_computations(ray);
     return shade_hit(hit);

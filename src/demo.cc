@@ -144,13 +144,14 @@ World chapter7_world(){
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
     middle.material.shininess = 100;
-    middle.material.setPattern(lerped);
+    // middle.material.setPattern(lerped);
 
     Sphere right;
     right.set_transform(Transformation::translation(1.5, 0.5, -0.5).multiply(Transformation::scaling(0.5, 0.5, 0.5)));
     right.material.color = Colour(0.5, 1, 0.1);
     right.material.diffuse = 0.7;
     right.material.specular = 0.3;
+    right.material.shininess = 9999999;
 
     Sphere left;
     left.set_transform(Transformation::translation(-1.5, 0.33, -0.75).multiply(Transformation::scaling(0.33, 0.33, 0.33)));
@@ -158,11 +159,16 @@ World chapter7_world(){
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
 
-    Tuple light_pos = Point(-10, 10, -10);
+    Tuple light_pos = Point(-30, 10, -10);
     light_pos = Transformation::rotation_x(0).multiply(light_pos);
 
     World world;
-    PointLight light = PointLight(light_pos, Colour(1, 1, 1));
+    PointLight light = PointLight(light_pos, Colour(1, 0.1, 0.1));
+    world.addLight(light);
+
+    light_pos = Point(30, 10, -10);
+    light_pos = Transformation::rotation_x(0).multiply(light_pos);
+    light = PointLight(light_pos, Colour(0.1, 0.1, 1));
     world.addLight(light);
 
     // world.addShape(floor);
@@ -176,7 +182,7 @@ World chapter7_world(){
     book_lerped.transform = Transformation::scaling(2, 1, 1);
 
     Plane floor_plane;
-    floor_plane.material.setPattern(book_lerped);
+    // floor_plane.material.setPattern(lerped);
     world.addShape(floor_plane);
 
     StripePattern simple_stripes = StripePattern(Colour(1, 0, 0), Colour(0, 1, 0));
@@ -192,10 +198,10 @@ World chapter7_world(){
 
 
     Plane wall_plane;
-    wall_plane.set_transform(Transformation::translation(0, 0, 30).multiply(Transformation::rotation_x(M_PI / 2).multiply(Transformation::scaling(2, 2, 2))));
-    wall_plane.material.color = Colour(1, 0, 0);
+    wall_plane.set_transform(Transformation::translation(0, 0, 30).multiply(Transformation::rotation_x(3 * M_PI / 2).multiply(Transformation::scaling(1, 1, 1))));
+    // wall_plane.material.color = Colour(1, 0, 0);
     wall_plane.material.specular = 0;
-    wall_plane.material.setPattern(repeat_stripes);
+    // wall_plane.material.setPattern(repeat_stripes);
     world.addShape(wall_plane);
 
     world.addShape(middle);
@@ -290,7 +296,7 @@ void lights() {
 }
 
 void window(){
-    int resolution = 500;
+    int resolution = 1000;
     SDL_Event event;
     SDL_Renderer *renderer;
     SDL_Window *window;
@@ -310,7 +316,6 @@ void window(){
 
     RenderTask worker = RenderTask(world, camera);
     worker.start();
-
     worker.waitForEnd();
 
     int ms_per_frame = 300;
@@ -321,7 +326,7 @@ void window(){
 
     bool doMoreFrames = true;
 
-    while (1) {
+    while (0) {
         long time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
         if (time > next_frame_time && doMoreFrames){
             for (int x=0;x<resolution;x++){
@@ -341,7 +346,7 @@ void window(){
             }
 
             cout << z << endl;
-            if (z > 10){
+            if (z > 10 && doMoreFrames){
                 z = 0;
                 ii += d;
 

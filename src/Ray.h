@@ -55,8 +55,8 @@ public:
 
     int count() const;
 
-    Intersection get(int index);
-    Intersection hit();
+    const Intersection& get(int index);
+    const Intersection& hit();
     bool hasHit();
 
     void addAll(const Intersections& intersections);

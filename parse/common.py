@@ -16,14 +16,45 @@ class Expr:
         self.c_code = c_code
         self.type = type
 
-    def dereference(self):
-        while self.type.endswith("*"):
-            self.type = self.type[:-1]
-            self.c_code = "(*" + self.c_code + ")"
+    def dereference(self) -> Expr:
+        expr = Expr(self.c_code, self.type)
+        while expr.type is not None and expr.type.endswith("*"):
+            expr.type = expr.type[:-1]
+            expr.c_code = "(*" + expr.c_code + ")"
+        return expr
 
-    def address_of(self):
-        self.type = self.type + "*"
-        self.c_code = "(&" + self.c_code + ")"
+    def address_of(self) -> Expr:
+        expr = Expr(self.c_code, self.type)
+        if expr.type is not None:
+            expr.type = expr.type + "*"
+            expr.c_code = "(&" + expr.c_code + ")"
+        return expr
+
+    def count_pointer_indirection(self) -> int:
+        if self.type is None:
+            return 0
+
+        count = 0
+        s = self.type
+        while s.endswith("*"):
+            count += 1
+            s = s[:-1]
+
+        return count
+
+    def match_pointer_indirection(self, other: Expr) -> Expr:
+        expr = Expr(self.c_code, self.type)
+
+        while expr.count_pointer_indirection() > other.count_pointer_indirection():
+            expr = expr.dereference()
+
+        while expr.count_pointer_indirection() < other.count_pointer_indirection():
+            expr = expr.address_of()
+
+        return expr
+
+    def __str__(self):
+        return "Expr('{}' -> '{}')".format(self.c_code, self.type)
 
 
 class FunctionDef:
@@ -124,6 +155,26 @@ class FunctionPrototype:
     is_static: bool
     return_type: str
     argument_types: list[str] = field(default_factory=lambda: [])
+    namespace: str | None = None
+
+    def match(self, args: list[Expr]) -> bool:
+        if len(self.argument_types) != len(args):
+            return False
+
+        for i, type in enumerate(self.argument_types):
+            if type != args[i].type:
+                return False
+
+        return True
+
+    def create_call(self, args: list[Expr]):
+        if self.is_static:
+            code = self.name + "(" + ", ".join([e.c_code for e in args]) + ")"
+            if self.namespace is not None:
+                code = self.namespace + "::" + code
+            return Expr(c_code=code, type=self.return_type)
+        else:
+            return Expr(c_code=args[0].c_code + "." + self.name + "(" + ", ".join([e.c_code for e in args[1:]]) + ")", type=self.return_type)
 
 
 @dataclass
@@ -149,7 +200,7 @@ class ClassPrototype:
         else:
             s = "Class: "
 
-        s +=  self.name
+        s += self.name
         if self.extends is not None:
             s += " extends " + self.extends
         s += "\n  - Location: " + self.filename
@@ -163,3 +214,10 @@ class ClassPrototype:
         for f in self.methods:
             s += "\n    - " + str(f)
         return s
+
+    def get_fields(self):
+        return {obj.name: obj for obj in self.fields}
+
+    # multiple options for one name because c++ allows overloading with different type signatures
+    def get_methods(self, name: str) -> list[FunctionPrototype]:
+        return [obj for obj in self.methods if obj.name == name]

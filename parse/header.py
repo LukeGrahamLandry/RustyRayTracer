@@ -105,6 +105,8 @@ class HeaderParser(AbstractParser):
             if self.match(TokenType.LEFT_PAREN):   # function
                 func = FunctionPrototype(name=name, return_type=return_type, is_static=is_static)
                 func.argument_types = self.parse_arg_list()
+                if is_static:
+                    func.namespace = self.current_class.name
                 self.current_class.methods.append(func)
             else:  # field
                 field = FieldPrototype(name=name, type=return_type, is_static=is_static)
@@ -182,7 +184,10 @@ class HeaderParser(AbstractParser):
             return self.current_class.name
 
 
-def walk(dirpath) -> list[ClassPrototype]:
+def walk_headers(dirpath) -> list[ClassPrototype]:
+    print("=" * 30)
+    print("Parsing header files...")
+    start_time = time()
     classes = []
     for root, dirs, files in os.walk(dirpath):
         for name in files:
@@ -192,8 +197,12 @@ def walk(dirpath) -> list[ClassPrototype]:
             path = os.path.join(root, name)
             classes += HeaderParser(path).parse()
 
+    end_time = time()
+    print("Found {} classes in {} ms.".format(len(classes), int(round(end_time - start_time, 3) * 1000)))
+    print("=" * 30)
+
     return classes
 
 
 if __name__ == "__main__":
-    [print(str(s)) for s in walk("../src")]
+    [print(str(s)) for s in walk_headers("../src")]

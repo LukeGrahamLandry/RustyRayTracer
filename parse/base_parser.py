@@ -147,6 +147,7 @@ class AbstractParser:
 
     def __init__(self, path: str, keywords):
         self.filepath = path
+        print("Parsing: " + path)
         with open(path, "r") as f:
             src = f.read()
 

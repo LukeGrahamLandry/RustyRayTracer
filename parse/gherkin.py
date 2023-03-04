@@ -6,29 +6,38 @@ from enum import Enum
 from time import time
 
 from config import *
+from common import *
+from header import *
+
+cpp_classes: dict[str, ClassPrototype] = {obj.name: obj for obj in walk_headers("../src")}
+for klass in cpp_classes.values():
+    if klass.extends is not None:
+        extends = cpp_classes[klass.extends]
+        for f in extends.fields:
+            klass.fields.append(f)
+        for m in extends.methods:
+            klass.methods.append(m)
+cpp_classes["Color"] = cpp_classes["Colour"]
+cpp_classes["Vector"].constructors[0].return_type = "Tuple"
+cpp_classes["Point"].constructors[0].return_type = "Tuple"
+cpp_classes["Plane"].constructors.append(FunctionPrototype(name="Plane", return_type="Plane", is_static=True))
+cpp_classes["Sphere"].constructors.append(FunctionPrototype(name="Sphere", return_type="Sphere", is_static=True))
+with open("parsed_headers.txt", "w") as f:
+    [f.write(str(s) + "\n\n") for s in cpp_classes.values()]
 
 
-
-class Compiler:
-    tokens: list[Token]
-    i: int
+class Compiler(AbstractParser):
     scopes: list[dict[str, str]]  # name -> type
-    current_scenario: str
+    current_scenario: str | None
     output_line_count: int
-    filepath: str
     background_code: list[str]
 
     def __init__(self, path: str, lines: int):
-        self.filepath = path
-        print("Parsing", path)
-        with open(path, "r") as f:
-            src = f.read()
+        super().__init__(path, gherkin_keywords)
 
         self.output_line_count = lines
-        self.current_scenario = "None"
+        self.current_scenario = None
         self.code = ""
-        self.tokens = scan(src, gherkin_keywords)
-        self.i = 0
         self.scopes = []
         self.background_code = []
 
@@ -131,16 +140,7 @@ class Compiler:
                     args.append(self.parse_expression(1))
                     self.match(TokenType.COMMA)
 
-                for fname, func in functions.items():
-                    if fname == name:
-                        left = func.get_call_expr(args)
-                        break
-                else:
-                    if name == "intersections":  # cringe special case
-                        left = Expr(c_code="Intersections({" + ", ".join([arg.c_code for arg in args]) + "})",
-                                    type="Intersections")
-                    else:
-                        self.error("Unknown function: " + name)
+                left = self.create_function_call(name, args)
 
             else:  # variable access
                 if name in variables:
@@ -155,32 +155,8 @@ class Compiler:
 
         while True:
             if self.match(TokenType.DOT):
-                if left is None:
-                    self.error("Get property on None expression")
-                if left.type is None:
-                    self.error("Get property on expression with None type: " + str(left))
-
-                field = str(self.consume(TokenType.IDENTIFIER, "Expect identifier after '.'").lexeme)
-
-                left.dereference()
-
-                obj = left.c_code
-                obj_type = left.type
-
-                if obj_type in fields:
-                    for option in fields[obj_type]:
-                        if option.name == field:
-                            c_code = obj + "." + field
-                            if option.is_getter:
-                                c_code = c_code + "()"
-
-                            left = Expr(c_code=c_code, type=option.type)
-                            break
-
-                    else:
-                        self.error("Unknown field {} on type {}".format(field, obj_type))
-                else:
-                    self.error("Unknown field {} on type {}".format(field, obj_type))
+                field_name = str(self.consume(TokenType.IDENTIFIER, "Expect identifier after '.'").lexeme)
+                left = self.create_field_access(field_name, left)
 
             elif self.match(TokenType.LEFT_BRACKET):
                 if left is None:
@@ -213,7 +189,6 @@ class Compiler:
                 return Expr(c_code=code, type=option.return_type)
 
         self.error("Invalid unary operator {} on type {} ".format(operator.name, right.type))
-        return None
 
     def parse_expression(self, precedence=0, left=None) -> Expr | None:
         if left is None:
@@ -226,7 +201,7 @@ class Compiler:
             if left is not None and left.type == "void":
                 self.line(left.c_code + ";")
 
-            if left is not None and left.type == "bool":
+            if left is not None and left.type == "bool" and precedence == 0:
                 self.line("_scenarioPassed = _scenarioPassed && ({});".format(left.c_code))
 
             return left
@@ -242,25 +217,29 @@ class Compiler:
             if right.type is None:
                 self.error("Cannot assign to value of unknown type: {} = {};".format(left.c_code, right.c_code))
 
+            right = right.match_pointer_indirection(left)
+
             if "." in left.c_code:  # set field
                 # TODO: type check
                 self.line("{} = {};".format(left.c_code, right.c_code))
             else:  # declare variable
                 self.put_var_type(left.c_code, right.type)
                 self.line("{} {} = {};".format(right.type, left.c_code, right.c_code))
-            return None
+            return Expr("", "void")
         elif operator == TokenType.EQUALITY:
-            left.dereference()
-            right.dereference()
+            left = left.dereference()
+            right = right.dereference()
 
             # cringe: it should know about abstract classes
             # if left.type != right.type:
             #    self.error("Cannot assert equality of different types: {} and {}".format(left.type, right.type))
 
-            if left.type == "double":
+            if left.type in cpp_classes:
+                equality = cpp_classes[left.type].get_methods("equals")
+                if len(equality) > 0:
+                    assertion = "{}.equals({})".format(left.c_code, right.c_code)
+            elif left.type == "double":
                 assertion = "almostEqual({}, {})".format(left.c_code, right.c_code)
-            elif left.type in ["Matrix", "Tuple", "Colour", "Intersection", "Material", "Sphere", "Shape"]:
-                assertion = "{}.equals({})".format(left.c_code, right.c_code)
             elif left.type in ["int", "bool"]:
                 assertion = "{} == {}".format(left.c_code, right.c_code)
             else:
@@ -268,7 +247,7 @@ class Compiler:
                 assertion = "false"
 
             self.line("_scenarioPassed = _scenarioPassed && ({});".format(assertion))
-            return None
+            return Expr("", "void")
 
         # Check all the binary operators that have a result.
         # If it matches one, evaluate that template and then parse a new expression with that as the left side.
@@ -279,33 +258,55 @@ class Compiler:
                     expr = Expr(c_code=code, type=option.return_type)
                     return self.parse_expression(precedence=precedence, left=expr)
 
+        print(left, operator, right)
         self.error("Expect expression")
 
-    def read_name(self) -> str:
-        return self.consume(TokenType.STRING, "Expect string.").lexeme
+    def create_function_call(self, spec_name: str, args: list[Expr]) -> Expr:
+        # Check as constructor
+        as_class_name = spec_name.replace("_", " ").title().replace(" ", "")
+        if as_class_name in cpp_classes:
+            klass = cpp_classes[as_class_name]
+            for func in klass.constructors:
+                if func.match(args):
+                    return func.create_call(args)
 
-    def match(self, type: TokenType) -> bool:
-        if self.check(type):
-            self.i += 1
-            return True
-        return False
+        # Check as method
+        if len(args) > 0:
+            as_class_name = args[0].type.replace("_", " ").title().replace(" ", "")
+            if as_class_name in cpp_classes:
+                klass = cpp_classes[as_class_name]
+                options = klass.get_methods(spec_name)
+                for func in options:
+                    if func.match(args[1:]):
+                        return func.create_call(args)
 
-    def check(self, type: TokenType) -> bool:
-        return self.peek().type == type
+        # Check as any static
+        for klass in cpp_classes.values():
+            for func in klass.get_methods(spec_name):
+                print(func)
+                if func.is_static and func.match(args):
+                    return func.create_call(args)
 
-    def peek(self) -> Token:
-        return self.tokens[self.i]
+        self.error("Undefined function: " + spec_name + " with args " + str([str(a) for a in args]))
 
-    def advance(self) -> Token:
-        self.i += 1
-        return self.tokens[self.i - 1]
+    def create_field_access(self, spec_name: str, object: Expr) -> Expr:
+        object = object.dereference()
+        if object.type not in cpp_classes:
+            self.error("Unrecognised type in: " + str(object))
 
-    def consume(self, type: TokenType, err: str) -> Token:
-        if not self.match(type):
-            self.i += 1
-            self.error(err)
+        klass = cpp_classes[object.type]
 
-        return self.tokens[self.i - 1]
+        # Check as field
+        if spec_name in klass.get_fields():
+            field = klass.get_fields()[spec_name]
+            return Expr(c_code=object.c_code + "." + field.name, type=field.type)
+
+        # Check as getter
+        for func in klass.get_methods(spec_name):
+            if not func.is_static and func.match([]):
+                return func.create_call([object])
+
+        self.error("Undefined field: " + spec_name + " on " + object.type)
 
     def line(self, c: str):
         self.code += ("    " * (len(self.scopes) + 1)) + c + "\n"
@@ -328,13 +329,11 @@ class Compiler:
         del self.scopes[len(self.scopes) - 1]
         self.line("}")
 
-    def error(self, err):
-        line_num = self.tokens[self.i - 1].line
-        print("Error on line {} ({}).\n    - {}".format(line_num, self.current_scenario, err))
-        # Inefficient but only on error so who cares
-        this_line = [str(t) for t in self.tokens if t.line == line_num]
-        print("    - " + str(this_line))
-        raise ParseError()
+    def get_err_context(self):
+        if self.current_scenario is None:
+            return super().get_err_context()
+        else:
+            return self.current_scenario
 
 
 if __name__ == "__main__":
@@ -349,7 +348,7 @@ if __name__ == "__main__":
     line_count = len(run_tests.splitlines()) + 1
     test_count = 0
 
-    for root, dirs, files in os.walk("tests"):
+    for root, dirs, files in os.walk("../tests"):
         for name in files:
             path = os.path.join(root, name)
 
@@ -363,7 +362,7 @@ if __name__ == "__main__":
     run_tests += '    cout << "- Execute: " << (_end_time - _start_time) << " ms." << endl;\n'
     run_tests += "    return 0;\n}\n"
 
-    with open("src/tests.cc", "w") as f:
+    with open("../src/tests.cc", "w") as f:
         f.write(run_tests)
 
     build_start_time = time()

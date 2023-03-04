@@ -18,7 +18,8 @@ public:
 
 class Shape;
 
-struct IntersectionComps {
+class IntersectionComps {
+public:
     double t;
     Shape* object;
     Tuple point;

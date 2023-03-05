@@ -7,9 +7,11 @@ from time import time
 
 from config import *
 from common import *
-from header import *
+from HeaderParser import *
+import AST
 
-cpp_classes: dict[str, ClassPrototype] = {obj.name: obj for obj in walk_headers("../src")}
+cpp_classes: dict[str, ClassPrototype] = {obj.name: obj for obj in walk_headers("src")}
+
 for klass in cpp_classes.values():
     if klass.extends is not None:
         extends = cpp_classes[klass.extends]
@@ -22,11 +24,13 @@ cpp_classes["Vector"].constructors[0].return_type = "Tuple"
 cpp_classes["Point"].constructors[0].return_type = "Tuple"
 cpp_classes["Plane"].constructors.append(FunctionPrototype(name="Plane", return_type="Plane", is_static=True))
 cpp_classes["Sphere"].constructors.append(FunctionPrototype(name="Sphere", return_type="Sphere", is_static=True))
-with open("parsed_headers.txt", "w") as f:
-    [f.write(str(s) + "\n\n") for s in cpp_classes.values()]
+doubleAlmostEqual = FunctionPrototype(name="almostEqual", is_static=False, return_type="bool")
+
+# with open("parsed_headers.txt", "w") as f:
+#     [f.write(str(s) + "\n\n") for s in cpp_classes.values()]
 
 
-class Compiler(AbstractParser):
+class GherkinParser(AbstractParser):
     scopes: list[dict[str, str]]  # name -> type
     current_scenario: str | None
     output_line_count: int
@@ -45,20 +49,13 @@ class Compiler(AbstractParser):
 
     def build(self):
         self.push_scope()
-        self.line("int _passedScenarioCount = 0;")
-
         self.consume(TokenType.FEATURE, "Expect 'Feature' at beginning of file.")
         name = self.read_name()
-        self.line("cout << \"FEATURE: " + name + ".\" << endl;")
-
         self.setup_background()
 
-        count = 0
         while not self.match(TokenType.EOF):
             self.parse_scenario()
-            count += 1
 
-        self.line('cout << "{} passed " << _passedScenarioCount << " of {} tests." << endl;'.format(name, count))
         self.pop_scope()
 
     def parse_scenario(self):
@@ -336,8 +333,18 @@ class Compiler(AbstractParser):
             return self.current_scenario
 
 
-if __name__ == "__main__":
-    parse_start_time = time()
+def find_feature_files(dirpath) -> list[str]:
+    results = []
+
+    for root, dirs, files in os.walk(dirpath):
+        for name in files:
+            if name.endswith(".feature"):
+                results.append(os.path.join(root, name))
+
+    return results
+
+
+def compile_feature_files(feature_filepaths: list[str], output_filepath: str):
     run_tests = "#include <chrono>\n"
     for file in includes:
         run_tests += "#include \"" + file + "\"\n"
@@ -348,32 +355,16 @@ if __name__ == "__main__":
     line_count = len(run_tests.splitlines()) + 1
     test_count = 0
 
-    for root, dirs, files in os.walk("../tests"):
-        for name in files:
-            path = os.path.join(root, name)
-
-            c = Compiler(path, line_count)
-            run_tests += c.code
-            line_count = c.output_line_count
-            test_count += 1
+    for path in feature_filepaths:
+        c = GherkinParser(path, line_count)
+        run_tests += c.code
+        line_count = c.output_line_count
+        test_count += 1
 
     run_tests += "    long _end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();\n"
     run_tests += '    cout << "' + ("=" * 30) + '" << endl;\n'
     run_tests += '    cout << "- Execute: " << (_end_time - _start_time) << " ms." << endl;\n'
     run_tests += "    return 0;\n}\n"
 
-    with open("../src/tests.cc", "w") as f:
+    with open(output_filepath, "w") as f:
         f.write(run_tests)
-
-    build_start_time = time()
-    print("=" * 30)
-    os.system(
-        "/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -G Ninja -S /Users/luke/Documents/mods/raytracer -B /Users/luke/Documents/mods/raytracer/cmake-build-debug")
-    os.system(
-        "/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --build /Users/luke/Documents/mods/raytracer/cmake-build-debug --target raytracer_tests -j 6")
-    print("=" * 30)
-    run_start_time = time()
-    os.system("/Users/luke/Documents/mods/raytracer/cmake-build-debug/raytracer_tests")
-    run_end_time = time()
-    print("- Build: " + str(int(round(run_start_time - build_start_time, 3) * 1000)) + " ms.")
-    print("- Parse: " + str(int(round(build_start_time - parse_start_time, 3) * 1000)) + " ms.")

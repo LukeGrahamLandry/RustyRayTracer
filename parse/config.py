@@ -1,5 +1,5 @@
 from common import *
-from header import *
+from HeaderParser import *
 
 includes = ["common.h", "Matrix.h", "Tuple.h", "Colour.h", "Canvas.h", "Ray.h", "World.h", "Camera.h", "shapes/Plane.h"]
 

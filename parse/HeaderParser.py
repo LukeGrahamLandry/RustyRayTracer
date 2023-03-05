@@ -184,9 +184,9 @@ class HeaderParser(AbstractParser):
             return self.current_class.name
 
 
-def walk_headers(dirpath) -> list[ClassPrototype]:
+def walk_headers(dirpath, quiet=True) -> list[ClassPrototype]:
     print("=" * 30)
-    print("Parsing header files...")
+    print("Parsing header files in " + os.path.abspath(dirpath))
     start_time = time()
     classes = []
     for root, dirs, files in os.walk(dirpath):

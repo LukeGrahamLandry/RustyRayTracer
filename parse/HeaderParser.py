@@ -1,5 +1,10 @@
 from __future__ import annotations
-from common import *
+
+import os
+from time import time
+
+from AST import *
+from AbstractParser import *
 
 header_keywords = dict({e.value: e for e in [
     TokenType.AMP,
@@ -184,7 +189,7 @@ class HeaderParser(AbstractParser):
             return self.current_class.name
 
 
-def walk_headers(dirpath, quiet=True) -> list[ClassPrototype]:
+def walk_headers(dirpath) -> list[ClassPrototype]:
     print("=" * 30)
     print("Parsing header files in " + os.path.abspath(dirpath))
     start_time = time()
@@ -205,4 +210,4 @@ def walk_headers(dirpath, quiet=True) -> list[ClassPrototype]:
 
 
 if __name__ == "__main__":
-    [print(str(s)) for s in walk_headers("../src")]
+    [print(str(s)) for s in walk_headers("src")]

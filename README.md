@@ -21,7 +21,6 @@
 ## Stuff to optimise
 
 - gauss inverse might be faster
-- cache inverses and determinants on matrix object. is it worth interning them?
 - alternate front end that just does perspective transformation for faster but no reflections
   - should be able to reuse all the math and world/object stuff 
 

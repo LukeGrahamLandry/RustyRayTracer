@@ -1,17 +1,12 @@
 from __future__ import annotations
 
 import os
-from collections import namedtuple
-from enum import Enum
-from time import time
-
-from config import *
-from common import *
-from HeaderParser import *
 import AST
+from HeaderParser import *
 
 cpp_classes: dict[str, ClassPrototype] = {obj.name: obj for obj in walk_headers("src")}
 
+# cringe: my header parser doesn't know how inheritance works
 for klass in cpp_classes.values():
     if klass.extends is not None:
         extends = cpp_classes[klass.extends]
@@ -19,35 +14,65 @@ for klass in cpp_classes.values():
             klass.fields.append(f)
         for m in extends.methods:
             klass.methods.append(m)
-cpp_classes["Color"] = cpp_classes["Colour"]
 cpp_classes["Vector"].constructors[0].return_type = "Tuple"
 cpp_classes["Point"].constructors[0].return_type = "Tuple"
 cpp_classes["Plane"].constructors.append(FunctionPrototype(name="Plane", return_type="Plane", is_static=True))
 cpp_classes["Sphere"].constructors.append(FunctionPrototype(name="Sphere", return_type="Sphere", is_static=True))
-doubleAlmostEqual = FunctionPrototype(name="almostEqual", is_static=False, return_type="bool")
 
-# with open("parsed_headers.txt", "w") as f:
-#     [f.write(str(s) + "\n\n") for s in cpp_classes.values()]
+# cringe: americans
+cpp_classes["Color"] = cpp_classes["Colour"]
+
+# cringe: my header parser doesn't know about global functions
+doubleAlmostEqual = FunctionPrototype(name="almostEqual", is_static=True, return_type="bool")
+
+
+gherkin_keywords = dict({e.value: e for e in [
+    TokenType.FEATURE,
+    TokenType.SCENARIO,
+    TokenType.BACKGROUND,
+    TokenType.GIVEN,
+    TokenType.AND,
+    TokenType.WHEN,
+    TokenType.THEN,
+    TokenType.EQUALITY,
+    TokenType.ASSIGN,
+    TokenType.PLUS,
+    TokenType.STAR,
+    TokenType.BANG,
+    TokenType.MINUS,
+    TokenType.SLASH,
+    TokenType.LEFT_PAREN,
+    TokenType.RIGHT_PAREN,
+    TokenType.LEFT_BRACKET,
+    TokenType.RIGHT_BRACKET,
+    TokenType.PI,
+    TokenType.COMMA,
+    TokenType.ROOT,
+    TokenType.PIPE,
+    TokenType.SCENARIO_OUTLINE
+]})
+
+# Could just keep line breaks as a token type, but I like the idea of insignificant whitespace.
+terminators = [TokenType.EOF, TokenType.AND, TokenType.GIVEN, TokenType.THEN, TokenType.WHEN, TokenType.SCENARIO,
+               TokenType.COMMA, TokenType.RIGHT_PAREN, TokenType.RIGHT_BRACKET, TokenType.SCENARIO_OUTLINE]
 
 
 class GherkinParser(AbstractParser):
     scopes: list[dict[str, str]]  # name -> type
     current_scenario: str | None
     output_line_count: int
-    background_code: list[str]
+    background_code: list[AST.Statement]
+    scenarios: list[AST.Scenario | AST.ReportErr]
 
-    def __init__(self, path: str, lines: int):
+    def __init__(self, path: str):
         super().__init__(path, gherkin_keywords)
 
-        self.output_line_count = lines
         self.current_scenario = None
-        self.code = ""
         self.scopes = []
         self.background_code = []
+        self.scenarios = []
 
-        self.build()
-
-    def build(self):
+    def build(self) -> AST.Feature:
         self.push_scope()
         self.consume(TokenType.FEATURE, "Expect 'Feature' at beginning of file.")
         name = self.read_name()
@@ -58,21 +83,17 @@ class GherkinParser(AbstractParser):
 
         self.pop_scope()
 
-    def parse_scenario(self):
-        start = len(self.code)
-        line_count = self.output_line_count
+        return AST.Feature(name=name, scenarios=self.scenarios)
 
+    def parse_scenario(self):
         self.current_scenario = "Untitled on Line " + str(self.peek().line)
+        self.scenarios.append(AST.Scenario(name=self.current_scenario, statements=[], background=self.background_code))
         try:
             self.consume(TokenType.SCENARIO, "Expect 'Scenario'.")
             self.current_scenario = self.read_name()
+            self.scenarios[-1].name = self.current_scenario
             self.push_scope()
-            self.line("bool _scenarioPassed = true;")
 
-            # Inject background setup for every test. Not at top level so variables reset for each scenario.
-            # Used by materials.feature
-            for line in self.background_code:
-                self.line(line.strip())
             # Start a new scope which lets scenarios redefine names from the background setup.
             self.push_scope()
 
@@ -89,66 +110,50 @@ class GherkinParser(AbstractParser):
             if self.match(TokenType.THEN):
                 self.parse_statement()
 
-            self.line("if (_scenarioPassed){")
-            self.line('    cout << " - PASS: {}" << endl;'.format(self.current_scenario))
-            self.line("    _passedScenarioCount++;")
-            self.line("} else {")
-            self.line('    cout << " - FAIL: {}" << endl;'.format(self.current_scenario))
-            self.line('    cout << "         at src/tests.cc:{}" << endl;'.format(line_count))
-            self.line("}")
             self.pop_scope()
             self.pop_scope()
         except ParseError:
-            self.code = self.code[:start]
-            self.output_line_count = line_count
             while not self.check(TokenType.SCENARIO) and not self.check(TokenType.EOF):
                 self.i += 1
             self.scopes = self.scopes[:1]
-            self.line('cout << " - ERROR: {}" << endl;'.format(self.current_scenario))
+            self.scenarios[-1] = AST.ReportErr(msg=self.current_scenario)
 
     def setup_background(self):
         if self.match(TokenType.BACKGROUND):
-            start = len(self.code)
-            line_count = self.output_line_count
-
             # Note: No inner compiler scope so the types get saved in the outermost one.
             #       Which works out to the behaviour I want.
             self.consume(TokenType.GIVEN, "Expect 'Given' as first statement.")
-            self.parse_statement()
+            self.parse_statement(to_background=True)
 
-            self.background_code += self.code[start:].split("\n")
-            self.code = self.code[:start]
-            self.output_line_count = line_count
-
-    def parse_statement(self):
-        self.parse_expression()
+    def parse_statement(self, to_background=False):
+        stmts = [self.parse_expression()]
         while self.match(TokenType.AND):
-            self.parse_expression()
+            stmts.append(self.parse_expression())
 
-    def parse_primary(self):
-        left = None
+        if to_background:
+            self.background_code.extend(stmts)
+        else:
+            self.scenarios[-1].statements.extend(stmts)
+
+    def parse_primary(self) -> AST.Expression | None:
+        left: AST.Expression | None = None
         if self.match(TokenType.PI):
-            left = Expr(c_code="M_PI", type="double")
+            left = AST.LiteralExpr(symbol="M_PI", type="double")
         elif self.check(TokenType.IDENTIFIER):
             name = self.advance().lexeme
             if self.match(TokenType.LEFT_PAREN):  # function call
-                args = []
-                while not self.match(TokenType.RIGHT_PAREN):
-                    args.append(self.parse_expression(1))
-                    self.match(TokenType.COMMA)
-
+                args = self.parse_arg_list(TokenType.RIGHT_PAREN)
                 left = self.create_function_call(name, args)
 
             else:  # variable access
-                if name in variables:
-                    left = variables[name]
-                elif name in ["true", "false"]:
-                    left = Expr(c_code=name, type="bool")
+                # TODO: identity_matrix
+                if name in ["true", "false"]:
+                    left = AST.LiteralExpr(symbol=name, type="bool")
                 else:
-                    left = Expr(c_code=name, type=self.get_var_type(name))
+                    left = AST.VarAccess(name=name, type=self.get_var_type(name))
 
         elif self.check(TokenType.NUMBER):  # double literal
-            left = Expr(c_code=str(self.advance().lexeme), type="double")
+            left = AST.LiteralExpr(symbol=str(self.advance().lexeme), type="double")
 
         while True:
             if self.match(TokenType.DOT):
@@ -159,47 +164,45 @@ class GherkinParser(AbstractParser):
                 if left is None:
                     self.error("Get index on None expression")
 
-                index = self.parse_expression()
-                self.consume(TokenType.RIGHT_BRACKET, "Expect closing ']'.")
-                for collection_type, value_type in getter_collections.items():
-                    if left.type == collection_type:
-                        left = Expr(c_code=left.c_code + ".get(" + index.c_code + ")", type=value_type)
-                        break
-                else:
-                    self.error("Invalid collection type: " + left.type)
-
+                index = self.parse_arg_list(TokenType.RIGHT_BRACKET)
+                left = self.create_function_call("get", [left, *index])
             else:
                 break
 
         return left
 
-    def parse_unary(self):
+    def parse_unary(self) -> AST.Expression:
         right = self.parse_primary()
         if right is not None:
             return right
 
         operator = self.advance().type
         right = self.parse_unary()
-        for option in unary_operators:
-            if operator == option.symbol and right.type == option.right_type:
-                code = option.code_template.replace("<b>", right.c_code)
-                return Expr(c_code=code, type=option.return_type)
 
-        self.error("Invalid unary operator {} on type {} ".format(operator.name, right.type))
+        if operator == TokenType.MINUS and right.type == "double":
+            return AST.UnaryExpr(symbol="-", value=right, type="double")
+        if operator == TokenType.ROOT and right.type == "double":
+            return AST.FunctionCall(func=FunctionPrototype.SQRT, args=[right], type="double")
+        elif operator == TokenType.BANG and right.type == "bool":
+            return AST.UnaryExpr(symbol="!", value=right, type="bool")
+        elif operator == TokenType.MINUS and right.type in cpp_classes:
+            return self.create_function_call("negate", [right])
+        else:
+            self.error("Invalid unary operator {} on type {} ".format(operator.name, right.type))
 
-    def parse_expression(self, precedence=0, left=None) -> Expr | None:
+    def parse_expression(self, precedence=0, left: Optional[AST.Expression] = None) -> Optional[AST.Expression | AST.Statement]:
         if left is None:
             left = self.parse_unary()
 
         operator = self.peek().type
 
         if operator in terminators:
-            # TODO: just treat equality and assignment as normal ops so no special case for void function calls
+            # Could just treat equality and assignment as normal ops so no special case for void function calls
             if left is not None and left.type == "void":
-                self.line(left.c_code + ";")
+                return AST.ExpressionStmt(value=left)
 
             if left is not None and left.type == "bool" and precedence == 0:
-                self.line("_scenarioPassed = _scenarioPassed && ({});".format(left.c_code))
+                return AST.Assertion(value=left)
 
             return left
 
@@ -211,83 +214,99 @@ class GherkinParser(AbstractParser):
 
         # These two can end the expression parsing. They don't return a value and correspond to c statement.
         if operator == TokenType.ASSIGN:
-            if right.type is None:
-                self.error("Cannot assign to value of unknown type: {} = {};".format(left.c_code, right.c_code))
+            if not isinstance(left, AST.VarAccess) and not isinstance(left, AST.FieldAccess):
+                self.error("Cannot only assign to var or field: {} = {};".format(str(left), str(right)))
 
+            is_declare = isinstance(left, AST.VarAccess) and self.get_var_type(left.name) is None
             right = right.match_pointer_indirection(left)
+            if is_declare:
+                self.put_var_type(left.name, right.type)
+                return AST.VarDeclare(variable=left, value=right, type=right.type)
+            else:
+                return AST.Setter(variable=left, value=right)
 
-            if "." in left.c_code:  # set field
-                # TODO: type check
-                self.line("{} = {};".format(left.c_code, right.c_code))
-            else:  # declare variable
-                self.put_var_type(left.c_code, right.type)
-                self.line("{} {} = {};".format(right.type, left.c_code, right.c_code))
-            return Expr("", "void")
         elif operator == TokenType.EQUALITY:
-            left = left.dereference()
-            right = right.dereference()
-
-            # cringe: it should know about abstract classes
-            # if left.type != right.type:
-            #    self.error("Cannot assert equality of different types: {} and {}".format(left.type, right.type))
+            left = left.dereference_all()
+            right = right.dereference_all()
 
             if left.type in cpp_classes:
-                equality = cpp_classes[left.type].get_methods("equals")
-                if len(equality) > 0:
-                    assertion = "{}.equals({})".format(left.c_code, right.c_code)
-            elif left.type == "double":
-                assertion = "almostEqual({}, {})".format(left.c_code, right.c_code)
-            elif left.type in ["int", "bool"]:
-                assertion = "{} == {}".format(left.c_code, right.c_code)
+                return AST.Assertion(value=self.create_function_call("equals", [left, right]))
+            elif left.type == "double" and right.type == "double":
+                return AST.Assertion(value=AST.FunctionCall(func=doubleAlmostEqual, args=[right, left], type=doubleAlmostEqual.return_type))
+            elif left.type == "bool" and right.type == "bool":
+                return AST.Assertion(value=AST.BinaryExpr(symbol="==", left=left, right=right, type="bool"))
             else:
-                self.error("Cannot assert equality of unknown type: " + str(left.type))
-                assertion = "false"
-
-            self.line("_scenarioPassed = _scenarioPassed && ({});".format(assertion))
-            return Expr("", "void")
+                self.error("Cannot assert equality of unknown type: {} == {}".format(left, right))
 
         # Check all the binary operators that have a result.
         # If it matches one, evaluate that template and then parse a new expression with that as the left side.
         if left is not None and right is not None:
-            for option in binary_operators:
-                if operator == option.symbol and left.type == option.left_type and right.type == option.right_type:
-                    code = option.code_template.replace("<a>", left.c_code).replace("<b>", right.c_code)
-                    expr = Expr(c_code=code, type=option.return_type)
-                    return self.parse_expression(precedence=precedence, left=expr)
+            if left.type == "double" and right.type == "double":
+                if operator in [TokenType.PLUS, TokenType.MINUS, TokenType.STAR, TokenType.SLASH]:
+                    expr = AST.BinaryExpr(symbol=operator.value, left=left, right=right, type="double")
+                else:
+                    self.error("Invalid binary operator on doubles: ({}) {} ({})".format(left, operator, right))
+
+            elif left.type in cpp_classes:
+                if operator == TokenType.PLUS:
+                    expr = self.create_function_call("add", [left, right])
+                elif operator == TokenType.MINUS:
+                    expr = self.create_function_call("subtract", [left, right])
+                elif operator == TokenType.STAR and right.type == "double":
+                    expr = self.create_function_call("scale", [left, right])
+                elif operator == TokenType.STAR:
+                    expr = self.create_function_call("multiply", [left, right])
+                elif operator == TokenType.SLASH:
+                    expr = self.create_function_call("divide", [left, right])
+                else:
+                    self.error("Invalid binary operator: ({}) {} ({})".format(left, operator, right))
+
+            return self.parse_expression(precedence=precedence, left=expr)
 
         print(left, operator, right)
         self.error("Expect expression")
 
-    def create_function_call(self, spec_name: str, args: list[Expr]) -> Expr:
+    def parse_arg_list(self, terminator: TokenType) -> list[AST.Expression]:
+        args = []
+        while not self.match(terminator):
+            expr = self.parse_expression(1)
+            if not isinstance(expr, AST.Expression):
+                self.error("Function argument must be expression: " + str(expr))
+            args.append(expr)
+            self.match(TokenType.COMMA)
+        return args
+
+    def create_function_call(self, spec_name: str, args: list[AST.Expression]) -> AST.Expression:
         # Check as constructor
         as_class_name = spec_name.replace("_", " ").title().replace(" ", "")
         if as_class_name in cpp_classes:
             klass = cpp_classes[as_class_name]
             for func in klass.constructors:
                 if func.match(args):
-                    return func.create_call(args)
+                    return AST.FunctionCall(func=func, args=args, type=func.return_type)
 
         # Check as method
         if len(args) > 0:
-            as_class_name = args[0].type.replace("_", " ").title().replace(" ", "")
+            as_class_name = args[0].type
             if as_class_name in cpp_classes:
                 klass = cpp_classes[as_class_name]
                 options = klass.get_methods(spec_name)
                 for func in options:
                     if func.match(args[1:]):
-                        return func.create_call(args)
+                        return AST.FunctionCall(func=func, args=args, type=func.return_type)
 
         # Check as any static
         for klass in cpp_classes.values():
             for func in klass.get_methods(spec_name):
-                print(func)
                 if func.is_static and func.match(args):
-                    return func.create_call(args)
+                    return AST.FunctionCall(func=func, args=args, type=func.return_type)
 
         self.error("Undefined function: " + spec_name + " with args " + str([str(a) for a in args]))
 
-    def create_field_access(self, spec_name: str, object: Expr) -> Expr:
-        object = object.dereference()
+    def create_field_access(self, spec_name: str, object: AST.Expression) -> AST.Expression:
+        if object.type is None:
+            self.error("object==" + str(object))
+        object = object.dereference_all()
         if object.type not in cpp_classes:
             self.error("Unrecognised type in: " + str(object))
 
@@ -295,36 +314,32 @@ class GherkinParser(AbstractParser):
 
         # Check as field
         if spec_name in klass.get_fields():
-            field = klass.get_fields()[spec_name]
-            return Expr(c_code=object.c_code + "." + field.name, type=field.type)
+            field: AST.FieldPrototype = klass.get_fields()[spec_name]
+            return AST.FieldAccess(field=field, obj=object, type=field.type)
 
         # Check as getter
         for func in klass.get_methods(spec_name):
             if not func.is_static and func.match([]):
-                return func.create_call([object])
+                return AST.FunctionCall(func=func, args=[object], type=func.return_type)
 
         self.error("Undefined field: " + spec_name + " on " + object.type)
 
-    def line(self, c: str):
-        self.code += ("    " * (len(self.scopes) + 1)) + c + "\n"
-        self.output_line_count += 1
-
-    def get_var_type(self, name: str) -> str:
+    def get_var_type(self, name: str) -> Optional[str]:
         for i in range(len(self.scopes)):
             data = self.scopes[len(self.scopes) - i - 1]
             if name in data:
                 return data[name]
 
+        return None
+
     def put_var_type(self, name: str, type: str):
         self.scopes[len(self.scopes) - 1][name] = type
 
     def push_scope(self):
-        self.line("{")
         self.scopes.append({})
 
     def pop_scope(self):
         del self.scopes[len(self.scopes) - 1]
-        self.line("}")
 
     def get_err_context(self):
         if self.current_scenario is None:
@@ -344,27 +359,12 @@ def find_feature_files(dirpath) -> list[str]:
     return results
 
 
-def compile_feature_files(feature_filepaths: list[str], output_filepath: str):
-    run_tests = "#include <chrono>\n"
-    for file in includes:
-        run_tests += "#include \"" + file + "\"\n"
-
-    run_tests += "\n// THIS FILE IS AUTOMATICALLY GENERATED. DO NOT EDIT MANUALLY. "
-    run_tests += "\n\nint main(){\n"
-    run_tests += "    long _start_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();\n"
-    line_count = len(run_tests.splitlines()) + 1
-    test_count = 0
+def parse_feature_files(feature_filepaths: list[str]) -> list[AST.Feature]:
+    features = []
 
     for path in feature_filepaths:
-        c = GherkinParser(path, line_count)
-        run_tests += c.code
-        line_count = c.output_line_count
-        test_count += 1
+        c = GherkinParser(path)
+        features.append(c.build())
 
-    run_tests += "    long _end_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();\n"
-    run_tests += '    cout << "' + ("=" * 30) + '" << endl;\n'
-    run_tests += '    cout << "- Execute: " << (_end_time - _start_time) << " ms." << endl;\n'
-    run_tests += "    return 0;\n}\n"
+    return features
 
-    with open(output_filepath, "w") as f:
-        f.write(run_tests)

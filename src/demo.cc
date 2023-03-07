@@ -140,7 +140,7 @@ World chapter7_world(){
 
     Sphere middle;
     middle.set_transform(Transformation::translation(-0.5, 1, 0.5));
-    // middle.material.color = Colour(0.1, 1, 0.5);
+    middle.material.color = Colour(0.1, 1, 0.5);
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
     middle.material.shininess = 100;
@@ -151,7 +151,6 @@ World chapter7_world(){
     right.material.color = Colour(0.5, 1, 0.1);
     right.material.diffuse = 0.7;
     right.material.specular = 0.3;
-    right.material.shininess = 9999999;
 
     Sphere left;
     left.set_transform(Transformation::translation(-1.5, 0.33, -0.75).multiply(Transformation::scaling(0.33, 0.33, 0.33)));
@@ -163,13 +162,13 @@ World chapter7_world(){
     light_pos = Transformation::rotation_x(0).multiply(light_pos);
 
     World world;
-    PointLight light = PointLight(light_pos, Colour(1, 0.1, 0.1));
+    PointLight light = PointLight(light_pos, Colour(1, 1, 1));
     world.addLight(light);
 
     light_pos = Point(30, 10, -10);
     light_pos = Transformation::rotation_x(0).multiply(light_pos);
     light = PointLight(light_pos, Colour(0.1, 0.1, 1));
-    world.addLight(light);
+    // world.addLight(light);
 
     // world.addShape(floor);
     // world.addShape(right_wall);
@@ -296,7 +295,7 @@ void lights() {
 }
 
 void window(){
-    int resolution = 1000;
+    int resolution = 400;
     SDL_Event event;
     SDL_Renderer *renderer;
     SDL_Window *window;
@@ -316,9 +315,8 @@ void window(){
 
     RenderTask worker = RenderTask(world, camera);
     worker.start();
-    worker.waitForEnd();
 
-    int ms_per_frame = 300;
+    int ms_per_frame = 100;
     long next_frame_time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
     int ii = 0;
     int d = 1;
@@ -326,9 +324,9 @@ void window(){
 
     bool doMoreFrames = true;
 
-    while (0) {
+    while (1) {
         long time = chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch()).count();
-        if (time > next_frame_time && doMoreFrames){
+        if (worker.isDone() && time > next_frame_time && doMoreFrames){
             for (int x=0;x<resolution;x++){
                 for (int y=0;y<resolution;y++){
                     Colour c = worker.getCanvas().pixel_at(x, y);
@@ -340,13 +338,13 @@ void window(){
             next_frame_time = time + ms_per_frame;
             z++;
 
-            if (worker.isDone()) {
-                doMoreFrames = false;
-                worker.waitForEnd();
-            }
+//            if (worker.isDone()) {
+//                doMoreFrames = false;
+//                worker.waitForEnd();
+//            }
 
             cout << z << endl;
-            if (z > 10 && doMoreFrames){
+            if (true){
                 z = 0;
                 ii += d;
 
@@ -354,9 +352,14 @@ void window(){
                 worker.halt();
 
                 perspective = Transformation::view_transform(Point(0, 1.5, -5), Point(0, 1, 0), Vector(0, 1, 0));
-                perspective = perspective.multiply(Transformation::translation((float) ii / 10.0, 0, 1));
+                perspective = perspective.multiply(Transformation::translation((float) ii / 50.0, 0, 1));
                 camera.set_transform(perspective);
-                if (ii > 20 || ii < -20) {
+
+//                Shape* wall_plane = world.getShape(1);
+//                Matrix base = Transformation::identity().multiply(Transformation::rotation_x(3 * M_PI / 2)).multiply(Transformation::translation(0, 0, 30)).multiply(Transformation::rotation_z(ii * M_PI / 16));
+//                wall_plane->set_transform(base);
+
+                if (ii > 50 || ii < -50) {
                     d = d * -1;
                 }
 

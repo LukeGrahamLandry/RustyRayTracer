@@ -110,19 +110,26 @@ def exec_tests_cc():
     print("=" * 30)
     run_start_time = time()
     os.system("cmake-build-debug/raytracer_tests")
-    print("- Build: " + str(int(round(run_start_time - build_start_time, 3) * 1000)) + " ms.")
+    print("- CMake Build: " + str(int(round(run_start_time - build_start_time, 3) * 1000)) + " ms.")
 
 
 def test_gherkin_parser():
-    from GherkinParser import GherkinParser, find_feature_files, compile_feature_files
+    from GherkinParser import GherkinParser, find_feature_files, parse_feature_files, cpp_classes
     from CodeGen import CodeGen
 
-    compile_feature_files(["tests/example.feature"], "src/tests.cc")
+    features = parse_feature_files(["tests/example.feature"])
+    [[[print(stmt) for stmt in s.statements] for s in f.scenarios] for f in features]
+    CodeGen(features, "src/tests.cc", list({x.filename.replace("src/", "") for x in cpp_classes.values()})).build()
     exec_tests_cc()
 
 
 def test_ray_tracer():
-    pass
+    from GherkinParser import GherkinParser, find_feature_files, parse_feature_files, cpp_classes
+    from CodeGen import CodeGen
+
+    features = parse_feature_files(find_feature_files("tests/book"))
+    CodeGen(features, "src/tests.cc", list({x.filename.replace("src/", "") for x in cpp_classes.values()})).build()
+    exec_tests_cc()
 
 
 if __name__ == "__main__":
@@ -130,3 +137,4 @@ if __name__ == "__main__":
     print("=" * 30)
     test_gherkin_parser()
     print("=" * 30)
+    test_ray_tracer()

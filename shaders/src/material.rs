@@ -38,7 +38,7 @@ impl Material {
             }
         }
 
-        return ambient_colour + diffuse_colour + specular_colour;
+        ambient_colour + diffuse_colour + specular_colour
     }
 }
 

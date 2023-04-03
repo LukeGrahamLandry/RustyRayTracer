@@ -1,5 +1,3 @@
-use core::cmp::Ordering;
-use core::mem;
 use spirv_std::glam::{Mat4, Vec4};
 
 pub struct Ray {

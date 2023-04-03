@@ -1,27 +1,5 @@
 // Couldn't make wgpu work so here's ten thousand years of setting up a window.
 
-/* https://github.com/EmbarkStudios/rust-gpu/tree/main/examples
- * Copyright (c) 2019 Embark Studios
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
-
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
-
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 use ash::{
     extensions::{ext, khr},
     util::read_spv,
@@ -33,8 +11,6 @@ use winit::{
     event::{Event, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
-extern crate shaders;
-use shaders::shared::ShaderConstants;
 
 use std::{
     borrow::Cow,
@@ -51,6 +27,7 @@ use std::time::Instant;
 use structopt::StructOpt;
 
 use spirv_builder::{MetadataPrintout, SpirvBuilder};
+use shaders::ShaderConstants;
 use crate::timer::FrameTimer;
 
 #[derive(Debug, StructOpt)]
@@ -646,7 +623,7 @@ impl RenderCtx {
             shader_set: Vec::new(),
             rendering_paused: false,
             recompiling_shaders: false,
-            start: std::time::Instant::now(),
+            start: Instant::now(),
         }
     }
 
@@ -913,19 +890,7 @@ impl RenderCtx {
                 device.cmd_set_scissor(draw_command_buffer, 0, &self.scissors);
 
                 let push_constants = ShaderConstants {
-                    width: self.scissors[0].extent.width,
-                    height: self.scissors[0].extent.height,
                     time: self.start.elapsed().as_secs_f32(),
-
-                    // FIXME(eddyb) implement mouse support for the ash runner.
-                    cursor_x: 0.0,
-                    cursor_y: 0.0,
-                    drag_start_x: 0.0,
-                    drag_start_y: 0.0,
-                    drag_end_x: 0.0,
-                    drag_end_y: 0.0,
-                    mouse_button_pressed: 0,
-                    mouse_button_press_time: [f32::NEG_INFINITY; 3],
                 };
                 device.cmd_push_constants(
                     draw_command_buffer,

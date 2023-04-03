@@ -5,9 +5,6 @@ use crate::ray::Ray;
 
 pub struct Camera {
     transform: Mat4,
-    hsize: usize,
-    vsize: usize,
-    field_of_view: f32,  // radians!
     pixel_size: f32,
     half_width: f32,
     half_height: f32
@@ -22,11 +19,8 @@ impl Camera {
 
         Camera {
             transform: Mat4::IDENTITY,
-            hsize,
-            vsize,
             half_width,
             half_height,
-            field_of_view,
             pixel_size: (half_width * 2.0) / (hsize as f32)
         }
     }

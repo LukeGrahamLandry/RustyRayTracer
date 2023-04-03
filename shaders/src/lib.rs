@@ -4,7 +4,6 @@ pub mod ray;
 pub mod shapes;
 pub mod camera;
 pub mod material;
-pub mod shared;
 
 use core::f32::consts::PI;
 use spirv_std::spirv;
@@ -13,16 +12,21 @@ use crate::camera::Camera;
 use crate::material::{Material, PointLight};
 use crate::ray::Intersections;
 use crate::shapes::{Shape, ShapeType};
-use crate::shared::ShaderConstants;
+
+pub struct ShaderConstants {
+    pub time: f32
+}
 
 #[spirv(fragment)]
 pub fn main_fs(
     #[spirv(frag_coord)] pixel_pos: Vec4,
     #[spirv(push_constant)] constants: &ShaderConstants,
+    // #[spirv(storage_buffer, descriptor_set = 0, binding = 0)] shapes: &mut [Shape],
     out_colour: &mut Vec4
 ) {
-    let mut camera = Camera::new(1280, 720, PI / 3.0);
-    let pos = vec4(10.0, 10.0, 10.0, 1.0);
+    // TODO: put the camera in the constants so i just make it once, and dont need the window size here
+    let mut camera = Camera::new(1280, 720, PI / 6.0);
+    let pos = vec4(0.0, 10.0, 1.1, 1.0);
     let pos = Mat4::from_rotation_y(constants.time) * pos;
     camera.set_transform(Mat4::look_at_lh(pos.xyz(), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)));
 

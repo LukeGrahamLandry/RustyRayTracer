@@ -4,16 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-env_logger = "0.10.0"
-pollster = "0.3.0"
-wgpu = {version = "0.15.1", features = ["spirv", "vulkan-portability"] }
+ash = "0.37"
+ash-window = "0.12"
+raw-window-handle = "0.5.1"
 winit = "0.28.3"
-
-[build-dependencies]
+structopt = "0.3.20"
+cfg-if = "1.0.0"
 spirv-builder = "0.6.1"
 
-[profile.release.build-override]
-opt-level = 3
-codegen-units = 16
-[profile.dev.build-override]
-opt-level = 3
+[target.'cfg(target_os = "macos")'.dependencies]
+ash-molten = { version = "0.13.1", features = ["pre-built"] }
+

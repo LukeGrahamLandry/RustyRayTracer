@@ -13,10 +13,10 @@ use crate::shapes::{Shape, ShapeType};
 
 #[spirv(fragment)]
 pub fn main_fs(
-    #[spirv(position)] pixel_pos: Vec4,
+    #[spirv(frag_coord)] pixel_pos: Vec4,
     out_colour: &mut Vec4
 ) {
-    let mut camera = Camera::new(100, 50, PI / 3.0);
+    let mut camera = Camera::new(1280, 720, PI / 3.0);
     camera.set_transform(Mat4::look_at_lh(vec3(10.0, 10.0, 10.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)));
 
     let sphere = Shape {

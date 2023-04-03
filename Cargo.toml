@@ -19,3 +19,14 @@ spirv-std = { version = "0.6" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 ash-molten = { version = "0.13.1", features = ["pre-built"] }
+
+[build-dependencies]
+spirv-builder = "0.6.1"
+
+# Compile build-dependencies in release mode with
+# the same settings as regular dependencies.
+[profile.release.build-override]
+opt-level = 3
+codegen-units = 16
+[profile.dev.build-override]
+opt-level = 3

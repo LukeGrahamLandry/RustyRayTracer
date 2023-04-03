@@ -22,11 +22,10 @@ use std::{
     sync::mpsc::{sync_channel, TryRecvError, TrySendError},
     thread,
 };
+use std::io::Cursor;
 use std::time::Instant;
 
 use structopt::StructOpt;
-
-use spirv_builder::{MetadataPrintout, SpirvBuilder};
 use shaders::ShaderConstants;
 use crate::timer::FrameTimer;
 
@@ -39,7 +38,9 @@ pub struct Options {
 }
 
 pub fn main() {
-    let options = Options::from_args();
+    let options = Options {
+        debug_layer: false,
+    };
     let shaders = compile_shaders();
 
     // runtime setup
@@ -72,53 +73,24 @@ pub fn main() {
         )],
     );
 
-    let (compiler_sender, compiler_reciever) = sync_channel(1);
-
     let mut timer = FrameTimer::new();
     event_loop.run(move |event, _window_target, control_flow| match event {
         Event::RedrawEventsCleared { .. } => {
-            match compiler_reciever.try_recv() {
-                Err(TryRecvError::Empty) => {
-                    if ctx.rendering_paused {
-                        let vk::Extent2D { width, height } = ctx.base.surface_resolution();
-                        if height > 0 && width > 0 {
-                            ctx.recreate_swapchain();
-                            ctx.render();
-                        }
-                    } else {
-                        ctx.render();
-                        timer.update();
-                    }
+            if ctx.rendering_paused {
+                let vk::Extent2D { width, height } = ctx.base.surface_resolution();
+                if height > 0 && width > 0 {
+                    ctx.recreate_swapchain();
+                    ctx.render();
                 }
-                Ok(new_shaders) => {
-                    for SpvFile { name, data } in new_shaders {
-                        ctx.insert_shader_module(name, &data);
-                    }
-                    ctx.recompiling_shaders = false;
-                    ctx.rebuild_pipelines(vk::PipelineCache::null());
-                }
-                Err(TryRecvError::Disconnected) => {
-                    panic!("compiler reciever disconnected unexpectedly");
-                }
-            };
+            } else {
+                ctx.render();
+                timer.update();
+            }
         }
         Event::WindowEvent { event, .. } => match event {
             WindowEvent::KeyboardInput { input, .. } => match input.virtual_keycode {
                 Some(VirtualKeyCode::Escape) => *control_flow = ControlFlow::Exit,
-                Some(VirtualKeyCode::F5) => {
-                    if !ctx.recompiling_shaders {
-                        ctx.recompiling_shaders = true;
-                        let compiler_sender = compiler_sender.clone();
-                        thread::spawn(move || {
-                            if let Err(TrySendError::Disconnected(_)) =
-                                compiler_sender.try_send(compile_shaders())
-                            {
-                                panic!("compiler sender disconnected unexpectedly");
-                            };
-                        });
-                    }
-                }
-                _ => *control_flow = ControlFlow::Wait,
+                _ => {} // *control_flow = ControlFlow::Wait,
             },
             WindowEvent::Resized(_) => {
                 ctx.recreate_swapchain();
@@ -131,26 +103,9 @@ pub fn main() {
 }
 
 pub fn compile_shaders() -> Vec<SpvFile> {
-    // Hack: spirv_builder builds into a custom directory if running under cargo, to not
-    // deadlock, and the default target directory if not. However, packages like `proc-macro2`
-    // have different configurations when being built here vs. when building
-    // rustc_codegen_spirv normally, so we *want* to build into a separate target directory, to
-    // not have to rebuild half the crate graph every time we run. So, pretend we're running
-    // under cargo by setting these environment variables.
-    std::env::set_var("OUT_DIR", env!("OUT_DIR"));
-    std::env::set_var("PROFILE", env!("PROFILE"));
-
-    let sky_shader_path =
-        SpirvBuilder::new("shaders", "spirv-unknown-vulkan1.1")
-            .print_metadata(MetadataPrintout::None)
-            .build()
-            .unwrap()
-            .module
-            .unwrap_single()
-            .to_path_buf();
     let sky_shader = SpvFile {
         name: "shaders".to_string(),
-        data: read_spv(&mut File::open(sky_shader_path).unwrap()).unwrap(),
+        data: read_spv(&mut Cursor::new(include_bytes!(env!("shaders.spv")))).unwrap(),
     };
     vec![sky_shader]
 }

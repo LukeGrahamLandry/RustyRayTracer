@@ -1,6 +1,8 @@
-use std::env;
+use spirv_builder::{Capability, MetadataPrintout, SpirvBuilder};
 
-fn main() {
-    let profile = env::var("PROFILE").unwrap();
-    println!("cargo:rustc-env=PROFILE={profile}");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    SpirvBuilder::new("shaders", "spirv-unknown-vulkan1.1")
+        .print_metadata(MetadataPrintout::Full)
+        .build()?;
+    Ok(())
 }

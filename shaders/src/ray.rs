@@ -29,7 +29,7 @@ impl Ray {
     pub(crate) fn transform(&self, mat: Mat4) -> Ray {
         Ray {
             origin: mat * self.origin,
-            direction: mat * self.direction,
+            direction: (mat * self.direction).normalize(),
         }
     }
 }

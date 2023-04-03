@@ -1,28 +1,44 @@
 #![no_std]
 
-mod ray;
-mod shapes;
-mod camera;
+pub mod ray;
+pub mod shapes;
+pub mod camera;
+pub mod material;
+pub mod shared;
 
 use core::f32::consts::PI;
 use spirv_std::spirv;
-use spirv_std::glam::{Mat4, vec2, Vec2, Vec3, vec3, vec4, Vec4};
+use spirv_std::glam::{Mat4, vec2, Vec2, Vec3, vec3, Vec3Swizzles, vec4, Vec4, Vec4Swizzles};
 use crate::camera::Camera;
+use crate::material::{Material, PointLight};
 use crate::ray::Intersections;
 use crate::shapes::{Shape, ShapeType};
+use crate::shared::ShaderConstants;
 
 #[spirv(fragment)]
 pub fn main_fs(
     #[spirv(frag_coord)] pixel_pos: Vec4,
+    #[spirv(push_constant)] constants: &ShaderConstants,
     out_colour: &mut Vec4
 ) {
     let mut camera = Camera::new(1280, 720, PI / 3.0);
-    camera.set_transform(Mat4::look_at_lh(vec3(10.0, 10.0, 10.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)));
+    let pos = vec4(10.0, 10.0, 10.0, 1.0);
+    let pos = Mat4::from_rotation_y(constants.time) * pos;
+    camera.set_transform(Mat4::look_at_lh(pos.xyz(), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)));
 
     let sphere = Shape {
         transform: Mat4::IDENTITY,
         shape: ShapeType::Sphere,
         id: 0,
+        material: Material {
+            colour: vec3(1.0, 0.2, 1.0),
+            ..Default::default()
+        },
+    };
+
+    let light = PointLight {
+        position: vec4(-20.0, 10.0, 30.0, 1.0),
+        intensity: vec3(1.0, 1.0, 1.0),
     };
 
     let ray = camera.ray_for_pixel(pixel_pos.x, pixel_pos.y);
@@ -30,7 +46,9 @@ pub fn main_fs(
     sphere.intersect(&ray, &mut hits);
 
     if hits.has_hit() {
-        *out_colour = vec4(1.0, 0.0, 0.0, 1.0);
+        let hit_pos = ray.position(hits.get_hit().t);
+        let colour = sphere.material.lighting(light, hit_pos, -ray.direction, sphere.normal_at(hit_pos), false);
+        *out_colour = colour.xyzz();
     } else {
         *out_colour = vec4(0.0, 0.0, 0.0, 1.0);
     }

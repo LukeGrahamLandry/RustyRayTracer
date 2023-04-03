@@ -11,6 +11,7 @@ winit = "0.28.3"
 structopt = "0.3.20"
 cfg-if = "1.0.0"
 spirv-builder = "0.6.1"
+shaders={path = "shaders"}
 
 [target.'cfg(target_os = "macos")'.dependencies]
 ash-molten = { version = "0.13.1", features = ["pre-built"] }

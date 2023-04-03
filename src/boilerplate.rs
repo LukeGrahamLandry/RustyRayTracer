@@ -33,6 +33,8 @@ use winit::{
     event::{Event, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
+extern crate shaders;
+use shaders::shared::ShaderConstants;
 
 use std::{
     borrow::Cow,
@@ -44,33 +46,12 @@ use std::{
     sync::mpsc::{sync_channel, TryRecvError, TrySendError},
     thread,
 };
+use std::time::Instant;
 
 use structopt::StructOpt;
 
 use spirv_builder::{MetadataPrintout, SpirvBuilder};
-
-pub struct ShaderConstants {
-    pub width: u32,
-    pub height: u32,
-    pub time: f32,
-
-    pub cursor_x: f32,
-    pub cursor_y: f32,
-    pub drag_start_x: f32,
-    pub drag_start_y: f32,
-    pub drag_end_x: f32,
-    pub drag_end_y: f32,
-
-    /// Bit mask of the pressed buttons (0 = Left, 1 = Middle, 2 = Right).
-    pub mouse_button_pressed: u32,
-
-    /// The last time each mouse button (Left, Middle or Right) was pressed,
-    /// or `f32::NEG_INFINITY` for buttons which haven't been pressed yet.
-    ///
-    /// If this is the first frame after the press of some button, that button's
-    /// entry in `mouse_button_press_time` will exactly equal `time`.
-    pub mouse_button_press_time: [f32; 3],
-}
+use crate::timer::FrameTimer;
 
 #[derive(Debug, StructOpt)]
 #[structopt()]
@@ -116,6 +97,7 @@ pub fn main() {
 
     let (compiler_sender, compiler_reciever) = sync_channel(1);
 
+    let mut timer = FrameTimer::new();
     event_loop.run(move |event, _window_target, control_flow| match event {
         Event::RedrawEventsCleared { .. } => {
             match compiler_reciever.try_recv() {
@@ -128,6 +110,7 @@ pub fn main() {
                         }
                     } else {
                         ctx.render();
+                        timer.update();
                     }
                 }
                 Ok(new_shaders) => {
@@ -164,9 +147,9 @@ pub fn main() {
                 ctx.recreate_swapchain();
             }
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-            _ => *control_flow = ControlFlow::Wait,
+            _ => {} // *control_flow = ControlFlow::Wait,
         },
-        _ => *control_flow = ControlFlow::Wait,
+        _ => {} // *control_flow = ControlFlow::Wait,
     });
 }
 

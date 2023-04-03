@@ -1,6 +1,7 @@
 use spirv_std::glam::{Mat4, Vec4, vec4};
 use crate::ray::{Intersection, Intersections, Ray};
 use spirv_std::num_traits::Float;
+use crate::material::Material;
 
 pub enum ShapeType {
     Sphere
@@ -9,7 +10,8 @@ pub enum ShapeType {
 pub struct Shape {
     pub transform: Mat4,
     pub shape: ShapeType,
-    pub id: usize
+    pub id: usize,
+    pub material: Material
 }
 
 impl Shape {
@@ -18,10 +20,26 @@ impl Shape {
         self.local_intersect(object_ray, hits);
     }
 
+    pub fn normal_at(&self, world_space_point: Vec4) -> Vec4 {
+        let object_space_point = self.transform.inverse() * world_space_point;
+        let object_space_normal = self.local_normal_at(object_space_point);
+        let mut world_space_normal = self.transform.inverse().transpose() * object_space_normal;
+        world_space_normal.w = 0.0;
+        world_space_normal.normalize()
+    }
+
     pub fn local_intersect(&self, object_ray: Ray, hits: &mut Intersections) {
         match self.shape {
             ShapeType::Sphere => {
                 self.local_intersect_sphere(object_ray, hits);
+            }
+        }
+    }
+
+    pub fn local_normal_at(&self, object_space_point: Vec4) -> Vec4 {
+        match self.shape {
+            ShapeType::Sphere => {
+                object_space_point - vec4(0.0, 0.0, 0.0, 1.0)
             }
         }
     }

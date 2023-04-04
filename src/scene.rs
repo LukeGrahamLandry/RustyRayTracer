@@ -1,15 +1,15 @@
 use std::mem::size_of;
 
+use shaders::material::PointLight;
 use shaders::{
     material::Material,
     shapes::{Shape, ShapeType},
 };
 use spirv_std::glam::{vec2, vec3, vec4, Mat4, Vec3, Vec3A};
-use shaders::material::PointLight;
 
 pub struct World {
     pub shapes: Vec<Shape>,
-    pub lights: Vec<PointLight>
+    pub lights: Vec<PointLight>,
 }
 
 impl World {
@@ -44,17 +44,12 @@ impl Default for World {
             },
         ];
 
-        let lights = vec![
-            PointLight {
-                position: vec4(-20.0, 10.0, 30.0, 1.0),
-                intensity: Vec3A::new(1.0, 1.0, 1.0),
-            }
-        ];
+        let lights = vec![PointLight {
+            position: vec4(-20.0, 10.0, 30.0, 1.0),
+            intensity: Vec3A::new(1.0, 1.0, 1.0),
+        }];
 
-        let world = World {
-            shapes,
-            lights
-        };
+        let world = World { shapes, lights };
 
         world.assert_sanity();
         world

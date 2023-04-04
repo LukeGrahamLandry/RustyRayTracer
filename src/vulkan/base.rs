@@ -411,12 +411,20 @@ impl RenderBase {
     }
 
     pub fn create_descriptor_layout(&self) -> vk::DescriptorSetLayout {
-        let descriptorset_layout_binding_descs = [vk::DescriptorSetLayoutBinding::builder()
-            .binding(0)
-            .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
-            .descriptor_count(1)
-            .stage_flags(vk::ShaderStageFlags::FRAGMENT)
-            .build()];
+        let descriptorset_layout_binding_descs = [
+            vk::DescriptorSetLayoutBinding::builder()
+                .binding(0)
+                .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
+                .descriptor_count(1)
+                .stage_flags(vk::ShaderStageFlags::FRAGMENT)
+                .build(),
+            vk::DescriptorSetLayoutBinding::builder()
+                .binding(1)
+                .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
+                .descriptor_count(1)
+                .stage_flags(vk::ShaderStageFlags::FRAGMENT)
+                .build(),
+        ];
         let descriptorset_layout_info = vk::DescriptorSetLayoutCreateInfo::builder()
             .bindings(&descriptorset_layout_binding_descs);
 

@@ -9,7 +9,7 @@ pub fn color_u32_from_vec4(v: Vec4) -> u32 {
     convert(srgb_oetf(v.z))
         | convert(srgb_oetf(v.y)) << 8
         | convert(srgb_oetf(v.x)) << 16
-        | convert(v.w) << 24
+        | convert(1.0) << 24
 }
 
 fn srgb_oetf(x: f32) -> f32 {

@@ -1,11 +1,11 @@
-use spirv_std::glam::Vec3A;
 use crate::material::PointLight;
 use crate::ray::{Comps, Intersection, Intersections, Ray};
 use crate::shapes::Shape;
+use spirv_std::glam::Vec3A;
 
 pub struct WorldView<'a> {
     pub shapes: &'a [Shape],
-    pub lights: &'a [PointLight]
+    pub lights: &'a [PointLight],
 }
 
 impl<'a> WorldView<'a> {
@@ -23,7 +23,8 @@ impl<'a> WorldView<'a> {
         let mut hits = Intersections::default();
 
         for i in 0..self.shapes.len() {
-            self.shapes[i].intersect(&ray, &mut hits);
+            let shape = &self.shapes[i];
+            shape.intersect(&ray, &mut hits);
         }
 
         hits
@@ -34,13 +35,11 @@ impl<'a> WorldView<'a> {
         let mut colour = Vec3A::ZERO;
 
         for i in 0..self.lights.len() {
-            colour += sphere.material.lighting(
-                &self.lights[i],
-                comps.point,
-                comps.eyev,
-                comps.normalv,
-                false,
-            );
+            let light = &self.lights[i];
+            colour +=
+                sphere
+                    .material
+                    .lighting(light, comps.point, comps.eyev, comps.normalv, false);
         }
 
         colour
@@ -49,7 +48,8 @@ impl<'a> WorldView<'a> {
     pub fn prepare_comps(&self, hit: &Intersection, ray: &Ray) -> Comps {
         let point = ray.position(hit.t);
         let eyev = -ray.direction;
-        let mut normalv = self.shapes[hit.obj as usize].normal_at(point);
+        let shape = &self.shapes[hit.obj as usize];
+        let mut normalv = shape.normal_at(point);
         let is_inside = eyev.dot(normalv) < 0.0;
         if is_inside {
             normalv = -normalv;
@@ -61,7 +61,7 @@ impl<'a> WorldView<'a> {
             point,
             eyev,
             normalv,
-            is_inside
+            is_inside,
         }
     }
 }

@@ -9,8 +9,8 @@ use std::mem::{self, size_of};
 use std::time::Instant;
 use std::{default::Default, ffi::CString, ops::Drop};
 
-use shaders::ShaderConstants;
 use crate::scene::World;
+use shaders::ShaderConstants;
 
 use super::base::RenderBase;
 
@@ -34,6 +34,7 @@ pub struct RenderCtx {
     swapchain_size: u32,
     descriptor_sets: Vec<vk::DescriptorSet>,
     shapes: Option<(Allocation, vk::Buffer)>,
+    lights: Option<(Allocation, vk::Buffer)>,
     descriptor_pool: vk::DescriptorPool,
 }
 
@@ -63,6 +64,7 @@ impl RenderCtx {
             )
         };
 
+        println!("shaders: {}", env!("shaders.spv"));
         let spirv = read_spv(&mut Cursor::new(include_bytes!(env!("shaders.spv")))).unwrap();
         let shader_info = vk::ShaderModuleCreateInfo::builder().code(&spirv);
         let shader_module = unsafe {
@@ -75,7 +77,7 @@ impl RenderCtx {
 
         let pool_sizes = [vk::DescriptorPoolSize {
             ty: vk::DescriptorType::STORAGE_BUFFER,
-            descriptor_count: swapchain_size,
+            descriptor_count: swapchain_size * 2,
         }];
         let descriptor_pool_info = vk::DescriptorPoolCreateInfo::builder()
             .max_sets(swapchain_size)
@@ -116,23 +118,43 @@ impl RenderCtx {
             start: Instant::now(),
             swapchain_size,
             shapes: None,
+            lights: None,
             descriptor_pool,
         }
     }
 
-    pub fn update_descriptor_set(&mut self, (allocation, buffer): (Allocation, vk::Buffer)) {
+    pub fn update_descriptor_set(
+        &mut self,
+        shapes: (Allocation, vk::Buffer),
+        lights: (Allocation, vk::Buffer),
+    ) {
+        println!("start");
         let descset = &self.descriptor_sets[0];
         let buffer_infos = [vk::DescriptorBufferInfo {
-            buffer,
+            buffer: shapes.1,
             offset: 0,
-            range: allocation.size(),
+            range: shapes.0.size(),
         }];
-        let desc_sets_write = [vk::WriteDescriptorSet::builder()
-            .dst_set(*descset)
-            .dst_binding(0)
-            .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
-            .buffer_info(&buffer_infos)
-            .build()];
+        let buffer_infos_2 = [vk::DescriptorBufferInfo {
+            buffer: lights.1,
+            offset: 0,
+            range: lights.0.size(),
+        }];
+        let desc_sets_write = [
+            vk::WriteDescriptorSet::builder()
+                .dst_set(*descset)
+                .dst_binding(0)
+                .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
+                .buffer_info(&buffer_infos)
+                .build(),
+            vk::WriteDescriptorSet::builder()
+                .dst_set(*descset)
+                .dst_binding(1)
+                .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
+                .buffer_info(&buffer_infos_2)
+                .build(),
+        ];
+        println!("do write");
         unsafe {
             self.base
                 .device
@@ -141,12 +163,15 @@ impl RenderCtx {
 
         // TODO: before taking this out, make sure i'm freeing the old one if i made a new buffer
         assert!(self.shapes.is_none());
+        assert!(self.lights.is_none());
 
-        self.shapes = Some((allocation, buffer));
+        self.shapes = Some(shapes);
+        self.lights = Some(lights);
+        println!("end");
     }
 
-    pub fn create_shapes_buffer(&mut self, world: &World) -> (Allocation, vk::Buffer) {
-        let bytes_size = (world.shapes.len() * size_of::<Shape>()) as u64;
+    pub fn allocate_buffer<T: Sized>(&mut self, data: &[T]) -> (Allocation, vk::Buffer) {
+        let bytes_size = (data.len() * size_of::<T>()) as u64;
         let vk_info = vk::BufferCreateInfo::builder()
             .size(bytes_size)
             .usage(vk::BufferUsageFlags::STORAGE_BUFFER);
@@ -158,7 +183,7 @@ impl RenderCtx {
             .base
             .allocator
             .allocate(&AllocationCreateDesc {
-                name: "Shapes allocation",
+                name: "allocation",
                 requirements,
                 location: MemoryLocation::CpuToGpu,
                 linear: true,
@@ -173,8 +198,8 @@ impl RenderCtx {
                 .unwrap()
         };
 
-        let data_ptr = allocation.mapped_ptr().unwrap().as_ptr() as *mut Shape;
-        unsafe { data_ptr.copy_from_nonoverlapping(world.shapes.as_ptr(), world.shapes.len()) };
+        let data_ptr = allocation.mapped_ptr().unwrap().as_ptr() as *mut T;
+        unsafe { data_ptr.copy_from_nonoverlapping(data.as_ptr(), data.len()) };
 
         (allocation, buffer)
     }
@@ -523,7 +548,7 @@ impl Drop for RenderCtx {
                     self.base.allocator.free(allocation).unwrap();
                     self.base.device.destroy_buffer(buffer, None);
                 }
-                None => {},
+                None => {}
             }
 
             self.base

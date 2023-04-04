@@ -16,7 +16,6 @@ pub struct Material {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct PointLight {
     pub position: Vec4,
     pub intensity: Vec3A,

@@ -7,9 +7,9 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
 };
 
-use raytracer::vulkan::base::RenderBase;
-use raytracer::timer::FrameTimer;
 use raytracer::scene::World;
+use raytracer::timer::FrameTimer;
+use raytracer::vulkan::base::RenderBase;
 
 pub fn main() {
     println!("Loading...");
@@ -24,8 +24,9 @@ pub fn main() {
     ctx.build_pipelines(vk::PipelineCache::null());
 
     let world = World::default();
-    let (allocation, buffer) = ctx.create_shapes_buffer(&world);
-    ctx.update_descriptor_set((allocation, buffer));
+    let shapes = ctx.allocate_buffer(&world.shapes);
+    let lights = ctx.allocate_buffer(&world.lights);
+    ctx.update_descriptor_set(shapes, lights);
 
     let mut timer = FrameTimer::new();
 

@@ -33,6 +33,7 @@ pub struct RenderCtx {
     swapchain_size: u32,
     descriptor_sets: Vec<vk::DescriptorSet>,
     shapes: Option<(Allocation, vk::Buffer)>,
+    descriptor_pool: vk::DescriptorPool,
 }
 
 impl RenderCtx {
@@ -114,6 +115,7 @@ impl RenderCtx {
             start: Instant::now(),
             swapchain_size,
             shapes: None,
+            descriptor_pool,
         }
     }
 
@@ -185,7 +187,10 @@ impl RenderCtx {
                 .unwrap()
         } as *mut Shape;
         unsafe { data_ptr.copy_from_nonoverlapping(shapes.as_ptr(), shapes.len()) };
-        unsafe { self.base.device.unmap_memory(allocation.memory()) };
+
+        // evidently doesnt do what i imagine it doing
+        // causes seg-fault / ERR: memory not mapped when trying to drop the allocator
+        // unsafe { self.base.device.unmap_memory(allocation.memory()) };
 
         (allocation, buffer)
     }
@@ -534,7 +539,7 @@ impl Drop for RenderCtx {
                     self.base.allocator.free(allocation).unwrap();
                     self.base.device.destroy_buffer(buffer, None);
                 }
-                None => todo!(),
+                None => {},
             }
 
             self.base
@@ -558,12 +563,13 @@ impl Drop for RenderCtx {
                 .destroy_descriptor_set_layout(self.descriptorsetlayout, None);
             self.base
                 .device
+                .destroy_descriptor_pool(self.descriptor_pool, None);
+            self.base
+                .device
                 .destroy_command_pool(self.commands.pool, None);
             self.base
                 .device
                 .destroy_shader_module(self.shader_module, None);
-
-            println!("done drop")
         }
     }
 }

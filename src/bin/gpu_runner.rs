@@ -11,6 +11,7 @@ use raytracer::vulkan::base::RenderBase;
 use raytracer::{scene::create_shapes, timer::FrameTimer};
 
 pub fn main() {
+    println!("Loading...");
     let event_loop = EventLoop::new();
     let window = winit::window::WindowBuilder::new()
         .with_title("Rusty Raytracer (GPU)")

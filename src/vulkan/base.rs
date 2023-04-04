@@ -17,12 +17,9 @@ pub const ENABLE_DEBUG_LAYER: bool = false;
 
 use super::render::{RenderCtx, RenderSync};
 pub struct RenderBase {
-    pub window: winit::window::Window,
+    pub allocator: Allocator,
 
-    pub entry: ash::Entry,
 
-    pub instance: ash::Instance,
-    pub device: ash::Device,
     pub swapchain_loader: khr::Swapchain,
 
     pub debug_utils_loader: Option<ext::DebugUtils>,
@@ -35,7 +32,12 @@ pub struct RenderBase {
     pub surface: vk::SurfaceKHR,
     pub surface_loader: khr::Surface,
     pub surface_format: vk::SurfaceFormatKHR,
-    pub allocator: Allocator,
+
+    pub device: ash::Device,
+    pub instance: ash::Instance,
+    pub entry: ash::Entry,
+    pub window: winit::window::Window,
+
 }
 
 impl RenderBase {
@@ -430,6 +432,7 @@ impl RenderBase {
 
 impl Drop for RenderBase {
     fn drop(&mut self) {
+        println!("Dropping RenderBase...");
         unsafe {
             self.device.destroy_device(None);
             self.surface_loader.destroy_surface(self.surface, None);

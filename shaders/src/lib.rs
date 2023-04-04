@@ -4,6 +4,7 @@ pub mod camera;
 pub mod material;
 pub mod ray;
 pub mod shapes;
+mod world;
 
 use crate::camera::Camera;
 use crate::material::{Material, PointLight};
@@ -14,6 +15,7 @@ use spirv_std::glam::{
     vec2, vec3, vec4, Mat4, Vec2, Vec3, Vec3A, Vec3Swizzles, Vec4, Vec4Swizzles,
 };
 use spirv_std::spirv;
+use crate::world::WorldView;
 
 pub struct ShaderConstants {
     pub time: f32,
@@ -24,6 +26,7 @@ pub fn main_fs(
     #[spirv(frag_coord)] pixel_pos: Vec4,
     #[spirv(push_constant)] constants: &ShaderConstants,
     #[spirv(storage_buffer, descriptor_set = 0, binding = 0)] shapes: &[Shape],
+    #[spirv(storage_buffer, descriptor_set = 0, binding = 1)] lights: &[PointLight],
     out_colour: &mut Vec4,
 ) {
     // TODO: put the camera in the constants so i just make it once, and dont need the window size here
@@ -36,33 +39,13 @@ pub fn main_fs(
         vec3(0.0, 1.0, 0.0),
     ));
 
-    let light = PointLight {
-        position: vec4(-20.0, 10.0, 30.0, 1.0),
-        intensity: Vec3A::new(1.0, 1.0, 1.0),
+    let world = WorldView {
+        shapes,
+        lights,
     };
 
     let ray = camera.ray_for_pixel(pixel_pos.x, pixel_pos.y);
-    let mut hits = Intersections::default();
-
-    for i in 0..shapes.len() {
-        shapes[i].intersect(&ray, &mut hits);
-    }
-
-    if hits.has_hit() {
-        let hit = hits.get_hit();
-        let sphere = &shapes[hit.obj as usize];
-        let hit_pos = ray.position(hit.t);
-        let colour = sphere.material.lighting(
-            light,
-            hit_pos,
-            -ray.direction,
-            sphere.normal_at(hit_pos),
-            false,
-        );
-        *out_colour = colour.xyzz();
-    } else {
-        *out_colour = vec4(0.0, 0.0, 0.0, 1.0);
-    }
+    *out_colour = world.color_at(&ray).xyzz();
 }
 
 // Big triangle that covers the screen so the fragment shader runs for every pixel.

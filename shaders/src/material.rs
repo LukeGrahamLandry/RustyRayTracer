@@ -25,7 +25,7 @@ pub struct PointLight {
 impl Material {
     pub fn lighting(
         &self,
-        light: PointLight,
+        light: &PointLight,
         position: Vec4,
         eye_vector: Vec4,
         normal_vector: Vec4,

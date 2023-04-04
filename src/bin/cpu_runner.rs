@@ -28,8 +28,6 @@ fn main() {
     let mut timer = FrameTimer::new();
     let world = World::default();
     event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
-
         match event {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 let (width, height) = {
@@ -55,7 +53,7 @@ fn main() {
                         let frag_coord = vec4(frag_coord.x, frag_coord.y, 0.0, 0.0);
 
                         let mut colour = vec4(0.0, 0.0, 0.0, 1.0);
-                        main_fs(frag_coord, &push_constants, &world.shapes, &mut colour);
+                        main_fs(frag_coord, &push_constants, &world.shapes, &world.lights, &mut colour);
 
                         color_u32_from_vec4(colour)
                     })

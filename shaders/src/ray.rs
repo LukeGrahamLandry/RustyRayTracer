@@ -11,6 +11,16 @@ pub struct Intersection {
     pub obj: u32,
 }
 
+#[derive(Copy, Clone)]
+pub struct Comps {
+    pub t: f32,
+    pub obj: u32,
+    pub point: Vec4,
+    pub eyev: Vec4,
+    pub normalv: Vec4,
+    pub is_inside: bool,
+}
+
 pub const MAX_HITS: usize = 4;
 
 pub struct Intersections {

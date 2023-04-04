@@ -21,7 +21,7 @@ pub struct ShaderConstants {
 pub fn main_fs(
     #[spirv(frag_coord)] pixel_pos: Vec4,
     #[spirv(push_constant)] constants: &ShaderConstants,
-    // #[spirv(storage_buffer, descriptor_set = 0, binding = 0)] shapes: &mut [Shape],
+    #[spirv(storage_buffer, descriptor_set = 0, binding = 0)] shapes: &[Shape],
     out_colour: &mut Vec4,
 ) {
     // TODO: put the camera in the constants so i just make it once, and dont need the window size here
@@ -34,15 +34,7 @@ pub fn main_fs(
         vec3(0.0, 1.0, 0.0),
     ));
 
-    let sphere = Shape {
-        transform: Mat4::IDENTITY,
-        shape: ShapeType::Sphere,
-        id: 0,
-        material: Material {
-            colour: vec3(1.0, 0.2, 1.0),
-            ..Default::default()
-        },
-    };
+    let sphere = &shapes[0];
 
     let light = PointLight {
         position: vec4(-20.0, 10.0, 30.0, 1.0),

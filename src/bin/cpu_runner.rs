@@ -2,6 +2,7 @@ extern crate raytracer;
 extern crate shaders;
 
 use rayon::prelude::*;
+use raytracer::scene::create_shapes;
 use raytracer::timer::FrameTimer;
 use shaders::{main_fs, ShaderConstants};
 use softbuffer::GraphicsContext;
@@ -22,6 +23,7 @@ fn main() {
 
     let start = Instant::now();
     let mut timer = FrameTimer::new();
+    let shapes = create_shapes();
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
@@ -50,7 +52,7 @@ fn main() {
                         let frag_coord = vec4(frag_coord.x, frag_coord.y, 0.0, 0.0);
 
                         let mut colour = vec4(0.0, 0.0, 0.0, 1.0);
-                        main_fs(frag_coord, &push_constants, &mut colour);
+                        main_fs(frag_coord, &push_constants, &shapes, &mut colour);
 
                         color_u32_from_vec4(colour)
                     })

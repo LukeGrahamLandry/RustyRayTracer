@@ -1,9 +1,13 @@
 use ash::util::read_spv;
 use ash::vk;
+use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, AllocationScheme};
+use gpu_allocator::MemoryLocation;
+use shaders::shapes::Shape;
 
 use std::io::Cursor;
+use std::mem::{self, size_of};
 use std::time::Instant;
-use std::{collections::HashMap, default::Default, ffi::CString, ops::Drop};
+use std::{default::Default, ffi::CString, ops::Drop};
 
 use shaders::ShaderConstants;
 
@@ -25,13 +29,17 @@ pub struct RenderCtx {
     pub rendering_paused: bool,
     pub start: std::time::Instant,
     pub shader_module: vk::ShaderModule,
+    descriptorsetlayout: vk::DescriptorSetLayout,
+    swapchain_size: u32,
+    descriptor_sets: Vec<vk::DescriptorSet>,
+    shapes: Option<(Allocation, vk::Buffer)>,
 }
 
 impl RenderCtx {
     pub fn from_base(base: RenderBase) -> Self {
         let sync = RenderSync::new(&base);
 
-        let (swapchain, extent) = base.create_swapchain();
+        let (swapchain, extent, swapchain_size) = base.create_swapchain();
         let image_views = base.create_image_views(swapchain);
         let render_pass = base.create_render_pass();
         let framebuffers = base.create_framebuffers(&image_views, render_pass, extent);
@@ -61,8 +69,36 @@ impl RenderCtx {
                 .expect("Shader module error")
         };
 
+        let descriptorsetlayout = base.create_descriptor_layout();
+
+        let pool_sizes = [vk::DescriptorPoolSize {
+            ty: vk::DescriptorType::STORAGE_BUFFER,
+            descriptor_count: swapchain_size,
+        }];
+        let descriptor_pool_info = vk::DescriptorPoolCreateInfo::builder()
+            .max_sets(swapchain_size)
+            .pool_sizes(&pool_sizes);
+        let descriptor_pool = unsafe {
+            base.device
+                .create_descriptor_pool(&descriptor_pool_info, None)
+                .unwrap()
+        };
+
+        let desc_layouts = vec![descriptorsetlayout; swapchain_size as usize];
+
+        let descriptor_set_allocate_info = vk::DescriptorSetAllocateInfo::builder()
+            .descriptor_pool(descriptor_pool)
+            .set_layouts(&desc_layouts);
+        let descriptor_sets = unsafe {
+            base.device
+                .allocate_descriptor_sets(&descriptor_set_allocate_info)
+                .unwrap()
+        };
+
         Self {
             sync,
+            descriptorsetlayout,
+            descriptor_sets,
             base,
             swapchain,
             extent,
@@ -76,7 +112,82 @@ impl RenderCtx {
             shader_module,
             rendering_paused: false,
             start: Instant::now(),
+            swapchain_size,
+            shapes: None,
         }
+    }
+
+    pub fn update_descriptor_set(&mut self, (allocation, buffer): (Allocation, vk::Buffer)) {
+        let descset = &self.descriptor_sets[0];
+        let buffer_infos = [vk::DescriptorBufferInfo {
+            buffer,
+            offset: 0,
+            range: allocation.size(),
+        }];
+        let desc_sets_write = [vk::WriteDescriptorSet::builder()
+            .dst_set(*descset)
+            .dst_binding(0)
+            .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
+            .buffer_info(&buffer_infos)
+            .build()];
+        unsafe {
+            self.base
+                .device
+                .update_descriptor_sets(&desc_sets_write, &[])
+        };
+
+        // TODO: before taking this out, make sure i'm freeing the old one if i made a new buffer
+        assert!(self.shapes.is_none());
+
+        self.shapes = Some((allocation, buffer));
+    }
+
+    pub fn create_shapes_buffer(&mut self, shapes: &[Shape]) -> (Allocation, vk::Buffer) {
+        let bytes_size = (shapes.len() * size_of::<Shape>()) as u64;
+        let vk_info = vk::BufferCreateInfo::builder()
+            .size(bytes_size)
+            .usage(vk::BufferUsageFlags::STORAGE_BUFFER);
+
+        let buffer = unsafe { self.base.device.create_buffer(&vk_info, None) }.unwrap();
+        let requirements = unsafe { self.base.device.get_buffer_memory_requirements(buffer) };
+
+        let allocation = self
+            .base
+            .allocator
+            .allocate(&AllocationCreateDesc {
+                name: "Example allocation",
+                requirements,
+                location: MemoryLocation::CpuToGpu,
+                linear: true, // Buffers are always linear
+                allocation_scheme: AllocationScheme::GpuAllocatorManaged,
+            })
+            .unwrap();
+
+        unsafe {
+            self.base
+                .device
+                .bind_buffer_memory(buffer, allocation.memory(), allocation.offset())
+                .unwrap()
+        };
+
+        // ?????
+        unsafe { self.base.device.unmap_memory(allocation.memory()) };
+
+        let data_ptr = unsafe {
+            self.base
+                .device
+                .map_memory(
+                    allocation.memory(),
+                    0,
+                    bytes_size,
+                    vk::MemoryMapFlags::empty(),
+                )
+                .unwrap()
+        } as *mut Shape;
+        unsafe { data_ptr.copy_from_nonoverlapping(shapes.as_ptr(), shapes.len()) };
+        unsafe { self.base.device.unmap_memory(allocation.memory()) };
+
+        (allocation, buffer)
     }
 
     pub fn create_pipeline_layout(&self) -> vk::PipelineLayout {
@@ -87,6 +198,7 @@ impl RenderCtx {
             .build();
         let layout_create_info = vk::PipelineLayoutCreateInfo::builder()
             .push_constant_ranges(&[push_constant_range])
+            .set_layouts(&[self.descriptorsetlayout])
             .build();
         unsafe {
             self.base
@@ -215,7 +327,7 @@ impl RenderCtx {
 
         self.cleanup_swapchain();
 
-        let (swapchain, extent) = self.base.create_swapchain();
+        let (swapchain, extent, swapchain_size) = self.base.create_swapchain();
         self.swapchain = swapchain;
         self.extent = extent;
         self.image_views = self.base.create_image_views(self.swapchain);
@@ -328,6 +440,15 @@ impl RenderCtx {
                     any_as_u8_slice(&push_constants),
                 );
 
+                device.cmd_bind_descriptor_sets(
+                    draw_command_buffer,
+                    vk::PipelineBindPoint::GRAPHICS,
+                    pipeline.pipeline_layout,
+                    0,
+                    &[self.descriptor_sets[0]],
+                    &[],
+                );
+
                 device.cmd_draw(draw_command_buffer, 3, 1, 0, 0);
                 device.cmd_end_render_pass(draw_command_buffer);
             },
@@ -402,8 +523,20 @@ impl RenderCtx {
 
 impl Drop for RenderCtx {
     fn drop(&mut self) {
+        println!("Dropping RenderCtx...");
         unsafe {
             self.base.device.device_wait_idle().unwrap();
+
+            let mut shapes = None;
+            mem::swap(&mut shapes, &mut self.shapes);
+            match shapes {
+                Some((allocation, buffer)) => {
+                    self.base.allocator.free(allocation).unwrap();
+                    self.base.device.destroy_buffer(buffer, None);
+                }
+                None => todo!(),
+            }
+
             self.base
                 .device
                 .destroy_semaphore(self.sync.present_complete_semaphore, None);
@@ -416,15 +549,21 @@ impl Drop for RenderCtx {
             self.base
                 .device
                 .free_command_buffers(self.commands.pool, &[self.commands.draw_command_buffer]);
+
             self.base.device.destroy_render_pass(self.render_pass, None);
             self.cleanup_pipelines();
             self.cleanup_swapchain();
+            self.base
+                .device
+                .destroy_descriptor_set_layout(self.descriptorsetlayout, None);
             self.base
                 .device
                 .destroy_command_pool(self.commands.pool, None);
             self.base
                 .device
                 .destroy_shader_module(self.shader_module, None);
+
+            println!("done drop")
         }
     }
 }

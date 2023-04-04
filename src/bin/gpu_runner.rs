@@ -1,18 +1,14 @@
 extern crate raytracer;
 
-use ash::{util::read_spv, vk};
+use ash::vk;
 
 use winit::{
     event::{Event, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
 
-use std::io::Cursor;
-
-use raytracer::timer::FrameTimer;
 use raytracer::vulkan::base::RenderBase;
-
-use structopt::StructOpt;
+use raytracer::{scene::create_shapes, timer::FrameTimer};
 
 pub fn main() {
     let event_loop = EventLoop::new();
@@ -26,7 +22,12 @@ pub fn main() {
     // Create shader module and pipelines
     ctx.build_pipelines(vk::PipelineCache::null());
 
+    let (allocation, buffer) = ctx.create_shapes_buffer(&create_shapes());
+    ctx.update_descriptor_set((allocation, buffer));
+
     let mut timer = FrameTimer::new();
+
+    println!("Begin event loop...");
     event_loop.run(move |event, _window_target, control_flow| match event {
         Event::RedrawEventsCleared { .. } => {
             if ctx.rendering_paused {

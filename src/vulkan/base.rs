@@ -35,7 +35,7 @@ pub struct RenderBase {
     pub surface: vk::SurfaceKHR,
     pub surface_loader: khr::Surface,
     pub surface_format: vk::SurfaceFormatKHR,
-    allocator: Result<Allocator, gpu_allocator::AllocationError>,
+    pub allocator: Allocator,
 }
 
 impl RenderBase {
@@ -217,7 +217,8 @@ impl RenderBase {
             physical_device: pdevice,
             debug_settings: Default::default(),
             buffer_device_address: true,
-        });
+        })
+        .unwrap();
 
         Self {
             window,
@@ -259,7 +260,7 @@ impl RenderBase {
         }
     }
 
-    pub fn create_swapchain(&self) -> (vk::SwapchainKHR, vk::Extent2D) {
+    pub fn create_swapchain(&self) -> (vk::SwapchainKHR, vk::Extent2D, u32) {
         let surface_capabilities = self.surface_capabilities();
         let mut desired_image_count = surface_capabilities.min_image_count + 1;
         if surface_capabilities.max_image_count > 0
@@ -303,7 +304,7 @@ impl RenderBase {
                 .create_swapchain(&swapchain_create_info, None)
                 .unwrap()
         };
-        (swapchain, extent)
+        (swapchain, extent, desired_image_count)
     }
 
     pub fn create_image_views(&self, swapchain: vk::SwapchainKHR) -> Vec<vk::ImageView> {
@@ -407,6 +408,23 @@ impl RenderBase {
 
     pub fn into_ctx(self) -> RenderCtx {
         RenderCtx::from_base(self)
+    }
+
+    pub fn create_descriptor_layout(&self) -> vk::DescriptorSetLayout {
+        let descriptorset_layout_binding_descs = [vk::DescriptorSetLayoutBinding::builder()
+            .binding(0)
+            .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
+            .descriptor_count(1)
+            .stage_flags(vk::ShaderStageFlags::FRAGMENT)
+            .build()];
+        let descriptorset_layout_info = vk::DescriptorSetLayoutCreateInfo::builder()
+            .bindings(&descriptorset_layout_binding_descs);
+
+        unsafe {
+            self.device
+                .create_descriptor_set_layout(&descriptorset_layout_info, None)
+                .unwrap()
+        }
     }
 }
 

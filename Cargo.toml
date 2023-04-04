@@ -16,6 +16,7 @@ shaders={path = "shaders"}
 rayon="1.7.0"
 softbuffer = "0.2.0"
 spirv-std = { version = "0.6" }
+gpu-allocator = "0.22.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 ash-molten = { version = "0.13.1", features = ["pre-built"] }

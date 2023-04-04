@@ -1,17 +1,17 @@
-use spirv_std::glam::{Mat4, Vec4, vec4};
-use crate::ray::{Intersection, Intersections, Ray};
-use spirv_std::num_traits::Float;
 use crate::material::Material;
+use crate::ray::{Intersection, Intersections, Ray};
+use spirv_std::glam::{vec4, Mat4, Vec4};
+use spirv_std::num_traits::Float;
 
 pub enum ShapeType {
-    Sphere
+    Sphere,
 }
 
 pub struct Shape {
     pub transform: Mat4,
     pub shape: ShapeType,
     pub id: usize,
-    pub material: Material
+    pub material: Material,
 }
 
 impl Shape {
@@ -38,9 +38,7 @@ impl Shape {
 
     pub fn local_normal_at(&self, object_space_point: Vec4) -> Vec4 {
         match self.shape {
-            ShapeType::Sphere => {
-                object_space_point - vec4(0.0, 0.0, 0.0, 1.0)
-            }
+            ShapeType::Sphere => object_space_point - vec4(0.0, 0.0, 0.0, 1.0),
         }
     }
 

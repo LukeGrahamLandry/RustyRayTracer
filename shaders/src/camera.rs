@@ -1,4 +1,4 @@
-use spirv_std::glam::{Mat4, Vec4, vec4};
+use spirv_std::glam::{vec4, Mat4, Vec4};
 use spirv_std::num_traits::Float;
 
 use crate::ray::Ray;
@@ -7,21 +7,29 @@ pub struct Camera {
     transform: Mat4,
     pixel_size: f32,
     half_width: f32,
-    half_height: f32
+    half_height: f32,
 }
 
 impl Camera {
     pub fn new(hsize: usize, vsize: usize, field_of_view: f32) -> Camera {
         let half_view = (field_of_view / 2.0).tan();
         let aspect_ratio = (hsize as f32) / (vsize as f32);
-        let half_width = if aspect_ratio >= 1.0 { half_view } else { half_view * aspect_ratio };
-        let half_height = if aspect_ratio >= 1.0 { half_view / aspect_ratio } else { half_view };
+        let half_width = if aspect_ratio >= 1.0 {
+            half_view
+        } else {
+            half_view * aspect_ratio
+        };
+        let half_height = if aspect_ratio >= 1.0 {
+            half_view / aspect_ratio
+        } else {
+            half_view
+        };
 
         Camera {
             transform: Mat4::IDENTITY,
             half_width,
             half_height,
-            pixel_size: (half_width * 2.0) / (hsize as f32)
+            pixel_size: (half_width * 2.0) / (hsize as f32),
         }
     }
 

@@ -1,20 +1,20 @@
 #![no_std]
 
-pub mod ray;
-pub mod shapes;
 pub mod camera;
 pub mod material;
+pub mod ray;
+pub mod shapes;
 
-use core::f32::consts::PI;
-use spirv_std::spirv;
-use spirv_std::glam::{Mat4, vec2, Vec2, Vec3, vec3, Vec3Swizzles, vec4, Vec4, Vec4Swizzles};
 use crate::camera::Camera;
 use crate::material::{Material, PointLight};
 use crate::ray::Intersections;
 use crate::shapes::{Shape, ShapeType};
+use core::f32::consts::PI;
+use spirv_std::glam::{vec2, vec3, vec4, Mat4, Vec2, Vec3, Vec3Swizzles, Vec4, Vec4Swizzles};
+use spirv_std::spirv;
 
 pub struct ShaderConstants {
-    pub time: f32
+    pub time: f32,
 }
 
 #[spirv(fragment)]
@@ -22,13 +22,17 @@ pub fn main_fs(
     #[spirv(frag_coord)] pixel_pos: Vec4,
     #[spirv(push_constant)] constants: &ShaderConstants,
     // #[spirv(storage_buffer, descriptor_set = 0, binding = 0)] shapes: &mut [Shape],
-    out_colour: &mut Vec4
+    out_colour: &mut Vec4,
 ) {
     // TODO: put the camera in the constants so i just make it once, and dont need the window size here
     let mut camera = Camera::new(1280, 720, PI / 6.0);
     let pos = vec4(0.0, 10.0, 1.1, 1.0);
     let pos = Mat4::from_rotation_y(constants.time) * pos;
-    camera.set_transform(Mat4::look_at_lh(pos.xyz(), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)));
+    camera.set_transform(Mat4::look_at_lh(
+        pos.xyz(),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+    ));
 
     let sphere = Shape {
         transform: Mat4::IDENTITY,
@@ -51,7 +55,13 @@ pub fn main_fs(
 
     if hits.has_hit() {
         let hit_pos = ray.position(hits.get_hit().t);
-        let colour = sphere.material.lighting(light, hit_pos, -ray.direction, sphere.normal_at(hit_pos), false);
+        let colour = sphere.material.lighting(
+            light,
+            hit_pos,
+            -ray.direction,
+            sphere.normal_at(hit_pos),
+            false,
+        );
         *out_colour = colour.xyzz();
     } else {
         *out_colour = vec4(0.0, 0.0, 0.0, 1.0);

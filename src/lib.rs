@@ -1,4 +1,4 @@
-pub mod boilerplate;
 pub mod timer;
+pub mod vulkan;
 
 extern crate shaders;

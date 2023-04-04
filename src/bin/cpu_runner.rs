@@ -1,20 +1,23 @@
 extern crate raytracer;
 extern crate shaders;
 
-use std::time::Instant;
 use rayon::prelude::*;
+use raytracer::timer::FrameTimer;
+use shaders::{main_fs, ShaderConstants};
 use softbuffer::GraphicsContext;
-use spirv_std::glam::{vec2, Vec2, vec4, Vec4};
+use spirv_std::glam::{vec2, vec4, Vec2, Vec4};
+use std::time::Instant;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
-use raytracer::timer::FrameTimer;
-use shaders::{main_fs, ShaderConstants};
-
 
 fn main() {
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_title("Rusty Raytracer (CPU)")
+        .with_inner_size(winit::dpi::LogicalSize::new(1280.0, 720.0))
+        .build(&event_loop)
+        .unwrap();
     let mut graphics_context = unsafe { GraphicsContext::new(&window, &window) }.unwrap();
 
     let start = Instant::now();
@@ -41,7 +44,8 @@ fn main() {
                             -((i / width) as f32 / height as f32 * 2.0 - 1.0),
                         );
 
-                        let frag_coord = (vec2(screen_pos.x, -screen_pos.y) + Vec2::ONE) / Vec2::splat(2.0)
+                        let frag_coord = (vec2(screen_pos.x, -screen_pos.y) + Vec2::ONE)
+                            / Vec2::splat(2.0)
                             * vec2(width as f32, height as f32);
                         let frag_coord = vec4(frag_coord.x, frag_coord.y, 0.0, 0.0);
 
@@ -60,7 +64,7 @@ fn main() {
                 window_id,
             } if window_id == window.id() => {
                 *control_flow = ControlFlow::Exit;
-            },
+            }
             Event::MainEventsCleared => {
                 window.request_redraw();
             }

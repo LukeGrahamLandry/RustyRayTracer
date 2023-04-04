@@ -1,16 +1,20 @@
 use crate::material::Material;
 use crate::ray::{Intersection, Intersections, Ray};
-use spirv_std::glam::{vec4, Mat4, Vec4};
+use spirv_std::glam::{vec4, Mat4, Vec2, Vec3, Vec4};
 use spirv_std::num_traits::Float;
 
+// even if this only has one varient and could be zero sized, it MUST be repr(C) and waste space to make it work in storage buffers.
+#[repr(C)]
 pub enum ShapeType {
     Sphere,
 }
 
+#[repr(C)]
 pub struct Shape {
     pub transform: Mat4,
     pub shape: ShapeType,
-    pub id: usize,
+    // usize is 8 bytes on the cpu but 4 bytes on the gpu so never ever ever use it in structs
+    pub id: u32,
     pub material: Material,
 }
 

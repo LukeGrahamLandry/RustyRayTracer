@@ -10,7 +10,9 @@ use crate::material::{Material, PointLight};
 use crate::ray::Intersections;
 use crate::shapes::{Shape, ShapeType};
 use core::f32::consts::PI;
-use spirv_std::glam::{vec2, vec3, vec4, Mat4, Vec2, Vec3, Vec3Swizzles, Vec4, Vec4Swizzles};
+use spirv_std::glam::{
+    vec2, vec3, vec4, Mat4, Vec2, Vec3, Vec3A, Vec3Swizzles, Vec4, Vec4Swizzles,
+};
 use spirv_std::spirv;
 
 pub struct ShaderConstants {
@@ -34,19 +36,23 @@ pub fn main_fs(
         vec3(0.0, 1.0, 0.0),
     ));
 
-    let sphere = &shapes[0];
-
     let light = PointLight {
         position: vec4(-20.0, 10.0, 30.0, 1.0),
-        intensity: vec3(1.0, 1.0, 1.0),
+        intensity: Vec3A::new(1.0, 1.0, 1.0),
     };
 
     let ray = camera.ray_for_pixel(pixel_pos.x, pixel_pos.y);
     let mut hits = Intersections::default();
-    sphere.intersect(&ray, &mut hits);
+
+    for i in 0..shapes.len() {
+        let sphere = &shapes[i];
+        sphere.intersect(&ray, &mut hits);
+    }
 
     if hits.has_hit() {
-        let hit_pos = ray.position(hits.get_hit().t);
+        let hit = hits.get_hit();
+        let sphere = &shapes[hit.obj as usize];
+        let hit_pos = ray.position(hit.t);
         let colour = sphere.material.lighting(
             light,
             hit_pos,

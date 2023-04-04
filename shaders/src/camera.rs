@@ -3,8 +3,10 @@ use spirv_std::num_traits::Float;
 
 use crate::ray::Ray;
 
+#[repr(C)]
+#[derive(Copy, Clone)]
 pub struct Camera {
-    transform: Mat4,
+    transform_inverse: Mat4,
     pixel_size: f32,
     half_width: f32,
     half_height: f32,
@@ -26,7 +28,7 @@ impl Camera {
         };
 
         Camera {
-            transform: Mat4::IDENTITY,
+            transform_inverse: Mat4::IDENTITY,
             half_width,
             half_height,
             pixel_size: (half_width * 2.0) / (hsize as f32),
@@ -34,7 +36,7 @@ impl Camera {
     }
 
     pub fn set_transform(&mut self, mat: Mat4) {
-        self.transform = mat;
+        self.transform_inverse = mat.inverse();
     }
 
     pub fn ray_for_pixel(&self, x: f32, y: f32) -> Ray {
@@ -49,8 +51,8 @@ impl Camera {
         let pixel_object_point = vec4(object_x, object_y, /* - */ 1.0, 1.0);
 
         // Transform to world space.
-        let pixel_world_point = self.transform.inverse() * pixel_object_point;
-        let origin = self.transform.inverse() * vec4(0.0, 0.0, 0.0, 1.0);
+        let pixel_world_point = self.transform_inverse * pixel_object_point;
+        let origin = self.transform_inverse * vec4(0.0, 0.0, 0.0, 1.0);
         let direction = pixel_world_point - origin;
         Ray { origin, direction }
     }

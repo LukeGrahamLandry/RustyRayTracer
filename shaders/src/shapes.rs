@@ -3,15 +3,16 @@ use crate::ray::{Intersection, Intersections, Ray};
 use spirv_std::glam::{vec4, Mat4, Vec2, Vec3, Vec4};
 use spirv_std::num_traits::Float;
 
-// even if this only has one varient and could be zero sized, it MUST be repr(C) and waste space to make it work in storage buffers.
+// even if this only has one variant and could be zero sized, it MUST be repr(C) and waste space to make it work in storage buffers.
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum ShapeType {
     Sphere,
 }
 
 #[repr(C)]
 pub struct Shape {
-    pub transform: Mat4,
+    pub transform_inverse: Mat4,
     pub shape: ShapeType,
     // usize is 8 bytes on the cpu but 4 bytes on the gpu so never ever ever use it in structs
     pub id: u32,
@@ -19,15 +20,19 @@ pub struct Shape {
 }
 
 impl Shape {
+    pub fn set_transform(&mut self, mat: Mat4) {
+        self.transform_inverse = mat.inverse();
+    }
+
     pub fn intersect(&self, world_ray: &Ray, hits: &mut Intersections) {
-        let object_ray = world_ray.transform(self.transform.inverse());
+        let object_ray = world_ray.transform(self.transform_inverse);
         self.local_intersect(object_ray, hits);
     }
 
     pub fn normal_at(&self, world_space_point: Vec4) -> Vec4 {
-        let object_space_point = self.transform.inverse() * world_space_point;
+        let object_space_point = self.transform_inverse * world_space_point;
         let object_space_normal = self.local_normal_at(object_space_point);
-        let mut world_space_normal = self.transform.inverse().transpose() * object_space_normal;
+        let mut world_space_normal = self.transform_inverse.transpose() * object_space_normal;
         world_space_normal.w = 0.0;
         world_space_normal.normalize()
     }

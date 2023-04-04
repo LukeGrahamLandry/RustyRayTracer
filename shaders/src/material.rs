@@ -1,6 +1,8 @@
 use spirv_std::glam::{vec3, vec4, Vec3, Vec3A, Vec4};
 use spirv_std::num_traits::Pow;
 
+#[repr(C)]
+#[derive(Copy, Clone)]
 pub struct Material {
     // and Vulkan stood upon the hilltop to proclaim the word of the lord,
     // and the word was that all that is good and holy shall be aligned to 16 bytes,
@@ -13,6 +15,8 @@ pub struct Material {
     pub shininess: f32,
 }
 
+#[repr(C)]
+#[derive(Copy, Clone)]
 pub struct PointLight {
     pub position: Vec4,
     pub intensity: Vec3A,

@@ -8,7 +8,8 @@ use winit::{
 };
 
 use raytracer::vulkan::base::RenderBase;
-use raytracer::{scene::create_shapes, timer::FrameTimer};
+use raytracer::timer::FrameTimer;
+use raytracer::scene::World;
 
 pub fn main() {
     println!("Loading...");
@@ -20,10 +21,10 @@ pub fn main() {
         .unwrap();
     let mut ctx = RenderBase::new(window).into_ctx();
 
-    // Create shader module and pipelines
     ctx.build_pipelines(vk::PipelineCache::null());
 
-    let (allocation, buffer) = ctx.create_shapes_buffer(&create_shapes());
+    let world = World::default();
+    let (allocation, buffer) = ctx.create_shapes_buffer(&world);
     ctx.update_descriptor_set((allocation, buffer));
 
     let mut timer = FrameTimer::new();

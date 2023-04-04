@@ -45,8 +45,7 @@ pub fn main_fs(
     let mut hits = Intersections::default();
 
     for i in 0..shapes.len() {
-        let sphere = &shapes[i];
-        sphere.intersect(&ray, &mut hits);
+        shapes[i].intersect(&ray, &mut hits);
     }
 
     if hits.has_hit() {

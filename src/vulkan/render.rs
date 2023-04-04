@@ -10,6 +10,7 @@ use std::time::Instant;
 use std::{default::Default, ffi::CString, ops::Drop};
 
 use shaders::ShaderConstants;
+use crate::scene::World;
 
 use super::base::RenderBase;
 
@@ -144,8 +145,8 @@ impl RenderCtx {
         self.shapes = Some((allocation, buffer));
     }
 
-    pub fn create_shapes_buffer(&mut self, shapes: &[Shape]) -> (Allocation, vk::Buffer) {
-        let bytes_size = (shapes.len() * size_of::<Shape>()) as u64;
+    pub fn create_shapes_buffer(&mut self, world: &World) -> (Allocation, vk::Buffer) {
+        let bytes_size = (world.shapes.len() * size_of::<Shape>()) as u64;
         let vk_info = vk::BufferCreateInfo::builder()
             .size(bytes_size)
             .usage(vk::BufferUsageFlags::STORAGE_BUFFER);
@@ -157,10 +158,10 @@ impl RenderCtx {
             .base
             .allocator
             .allocate(&AllocationCreateDesc {
-                name: "Example allocation",
+                name: "Shapes allocation",
                 requirements,
                 location: MemoryLocation::CpuToGpu,
-                linear: true, // Buffers are always linear
+                linear: true,
                 allocation_scheme: AllocationScheme::GpuAllocatorManaged,
             })
             .unwrap();
@@ -172,25 +173,8 @@ impl RenderCtx {
                 .unwrap()
         };
 
-        // ?????
-        unsafe { self.base.device.unmap_memory(allocation.memory()) };
-
-        let data_ptr = unsafe {
-            self.base
-                .device
-                .map_memory(
-                    allocation.memory(),
-                    0,
-                    bytes_size,
-                    vk::MemoryMapFlags::empty(),
-                )
-                .unwrap()
-        } as *mut Shape;
-        unsafe { data_ptr.copy_from_nonoverlapping(shapes.as_ptr(), shapes.len()) };
-
-        // evidently doesnt do what i imagine it doing
-        // causes seg-fault / ERR: memory not mapped when trying to drop the allocator
-        // unsafe { self.base.device.unmap_memory(allocation.memory()) };
+        let data_ptr = allocation.mapped_ptr().unwrap().as_ptr() as *mut Shape;
+        unsafe { data_ptr.copy_from_nonoverlapping(world.shapes.as_ptr(), world.shapes.len()) };
 
         (allocation, buffer)
     }

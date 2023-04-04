@@ -19,7 +19,6 @@ use super::render::{RenderCtx, RenderSync};
 pub struct RenderBase {
     pub allocator: Allocator,
 
-
     pub swapchain_loader: khr::Swapchain,
 
     pub debug_utils_loader: Option<ext::DebugUtils>,
@@ -37,7 +36,6 @@ pub struct RenderBase {
     pub instance: ash::Instance,
     pub entry: ash::Entry,
     pub window: winit::window::Window,
-
 }
 
 impl RenderBase {

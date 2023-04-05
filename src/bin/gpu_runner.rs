@@ -7,26 +7,30 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
 };
 
-use raytracer::scene::World;
 use raytracer::timer::FrameTimer;
 use raytracer::vulkan::base::RenderBase;
+use raytracer::{demo, scene::World};
 
 pub fn main() {
     println!("Loading...");
+    let world = demo::chapter7();
     let event_loop = EventLoop::new();
     let window = winit::window::WindowBuilder::new()
         .with_title("Rusty Raytracer (GPU)")
-        .with_inner_size(winit::dpi::LogicalSize::new(1280.0, 720.0))
+        .with_inner_size(winit::dpi::LogicalSize::new(
+            world.camera.size().0,
+            world.camera.size().1,
+        ))
         .build(&event_loop)
         .unwrap();
     let mut ctx = RenderBase::new(window).into_ctx();
 
     ctx.build_pipelines(vk::PipelineCache::null());
 
-    let world = World::default();
     let shapes = ctx.allocate_buffer(&world.shapes);
     let lights = ctx.allocate_buffer(&world.lights);
     ctx.update_descriptor_set(shapes, lights);
+    ctx.camera = world.camera;
 
     let mut timer = FrameTimer::new();
 

@@ -4,7 +4,7 @@ pub mod camera;
 pub mod material;
 pub mod ray;
 pub mod shapes;
-mod world;
+pub mod world;
 
 use crate::camera::Camera;
 use crate::material::{Material, PointLight};
@@ -17,31 +17,21 @@ use spirv_std::glam::{
 };
 use spirv_std::spirv;
 
-pub struct ShaderConstants {
+pub struct ShaderInputs {
     pub time: f32,
+    pub camera: Camera,
 }
 
 #[spirv(fragment)]
 pub fn main_fs(
     #[spirv(frag_coord)] pixel_pos: Vec4,
-    #[spirv(push_constant)] constants: &ShaderConstants,
+    #[spirv(push_constant)] inputs: &ShaderInputs,
     #[spirv(storage_buffer, descriptor_set = 0, binding = 0)] shapes: &[Shape],
     #[spirv(storage_buffer, descriptor_set = 0, binding = 1)] lights: &[PointLight],
     out_colour: &mut Vec4,
 ) {
-    // TODO: put the camera in the constants so i just make it once, and dont need the window size here
-    let mut camera = Camera::new(1280, 720, PI / 6.0);
-    let pos = vec4(0.0, 10.0, 1.1, 1.0);
-    let pos = Mat4::from_rotation_y(constants.time) * pos;
-    camera.set_transform(Mat4::look_at_lh(
-        pos.xyz(),
-        vec3(0.0, 0.0, 0.0),
-        vec3(0.0, 1.0, 0.0),
-    ));
-
     let world = WorldView { shapes, lights };
-
-    let ray = camera.ray_for_pixel(pixel_pos.x, pixel_pos.y);
+    let ray = inputs.camera.ray_for_pixel(pixel_pos.x, pixel_pos.y);
     *out_colour = world.color_at(&ray).xyzz();
 }
 

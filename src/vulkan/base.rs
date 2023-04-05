@@ -192,13 +192,14 @@ impl RenderBase {
         let present_queue = unsafe { device.get_device_queue(queue_family_index, 0) };
 
         let surface_format = {
+            // the ray tracing shader outputs are in a linear colour space, not srgb
             let acceptable_formats = {
                 [
-                    vk::Format::R8G8B8_SRGB,
-                    vk::Format::B8G8R8_SRGB,
-                    vk::Format::R8G8B8A8_SRGB,
-                    vk::Format::B8G8R8A8_SRGB,
-                    vk::Format::A8B8G8R8_SRGB_PACK32,
+                    vk::Format::R8G8B8_UNORM,
+                    vk::Format::B8G8R8_UNORM,
+                    vk::Format::R8G8B8A8_UNORM,
+                    vk::Format::B8G8R8A8_UNORM,
+                    vk::Format::A8B8G8R8_UNORM_PACK32,
                 ]
             };
             unsafe {

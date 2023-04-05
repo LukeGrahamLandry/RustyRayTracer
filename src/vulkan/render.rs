@@ -2,6 +2,7 @@ use ash::util::read_spv;
 use ash::vk;
 use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, AllocationScheme};
 use gpu_allocator::MemoryLocation;
+use shaders::camera::Camera;
 use shaders::shapes::Shape;
 
 use std::io::Cursor;
@@ -10,7 +11,7 @@ use std::time::Instant;
 use std::{default::Default, ffi::CString, ops::Drop};
 
 use crate::scene::World;
-use shaders::ShaderConstants;
+use shaders::ShaderInputs;
 
 use super::base::RenderBase;
 
@@ -36,6 +37,7 @@ pub struct RenderCtx {
     shapes: Option<(Allocation, vk::Buffer)>,
     lights: Option<(Allocation, vk::Buffer)>,
     descriptor_pool: vk::DescriptorPool,
+    pub camera: Camera,
 }
 
 impl RenderCtx {
@@ -64,7 +66,7 @@ impl RenderCtx {
             )
         };
 
-        println!("shaders: {}", env!("shaders.spv"));
+        dbg!(env!("shaders.spv"));
         let spirv = read_spv(&mut Cursor::new(include_bytes!(env!("shaders.spv")))).unwrap();
         let shader_info = vk::ShaderModuleCreateInfo::builder().code(&spirv);
         let shader_module = unsafe {
@@ -120,6 +122,7 @@ impl RenderCtx {
             shapes: None,
             lights: None,
             descriptor_pool,
+            camera: Camera::default(),
         }
     }
 
@@ -128,7 +131,6 @@ impl RenderCtx {
         shapes: (Allocation, vk::Buffer),
         lights: (Allocation, vk::Buffer),
     ) {
-        println!("start");
         let descset = &self.descriptor_sets[0];
         let buffer_infos = [vk::DescriptorBufferInfo {
             buffer: shapes.1,
@@ -154,7 +156,7 @@ impl RenderCtx {
                 .buffer_info(&buffer_infos_2)
                 .build(),
         ];
-        println!("do write");
+
         unsafe {
             self.base
                 .device
@@ -167,7 +169,6 @@ impl RenderCtx {
 
         self.shapes = Some(shapes);
         self.lights = Some(lights);
-        println!("end");
     }
 
     pub fn allocate_buffer<T: Sized>(&mut self, data: &[T]) -> (Allocation, vk::Buffer) {
@@ -207,7 +208,7 @@ impl RenderCtx {
     pub fn create_pipeline_layout(&self) -> vk::PipelineLayout {
         let push_constant_range = vk::PushConstantRange::builder()
             .offset(0)
-            .size(std::mem::size_of::<ShaderConstants>() as u32)
+            .size(std::mem::size_of::<ShaderInputs>() as u32)
             .stage_flags(vk::ShaderStageFlags::ALL)
             .build();
         let layout_create_info = vk::PipelineLayoutCreateInfo::builder()
@@ -443,8 +444,9 @@ impl RenderCtx {
                 device.cmd_set_viewport(draw_command_buffer, 0, &self.viewports);
                 device.cmd_set_scissor(draw_command_buffer, 0, &self.scissors);
 
-                let push_constants = ShaderConstants {
+                let push_constants = ShaderInputs {
                     time: self.start.elapsed().as_secs_f32(),
+                    camera: self.camera,
                 };
                 device.cmd_push_constants(
                     draw_command_buffer,

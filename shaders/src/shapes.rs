@@ -11,11 +11,12 @@ pub enum ShapeType {
 }
 
 #[repr(C)]
+#[derive(Default)]
 pub struct Shape {
     pub transform_inverse: Mat4,
     pub shape: ShapeType,
     // usize is 8 bytes on the cpu but 4 bytes on the gpu so never ever ever use it in structs
-    pub id: u32,
+    pub index: u32,
     pub material: Material,
 }
 
@@ -64,12 +65,18 @@ impl Shape {
 
             hits.add(Intersection {
                 t: t1,
-                obj: self.id,
+                obj: self.index,
             });
             hits.add(Intersection {
                 t: t2,
-                obj: self.id,
+                obj: self.index,
             });
         }
+    }
+}
+
+impl Default for ShapeType {
+    fn default() -> Self {
+        ShapeType::Sphere
     }
 }

@@ -4,12 +4,14 @@ use spirv_std::num_traits::Float;
 use crate::ray::Ray;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Camera {
     transform_inverse: Mat4,
     pixel_size: f32,
     half_width: f32,
     half_height: f32,
+    hsize: f32,
+    vsize: f32,
 }
 
 impl Camera {
@@ -32,6 +34,8 @@ impl Camera {
             half_width,
             half_height,
             pixel_size: (half_width * 2.0) / (hsize as f32),
+            hsize: hsize as f32,
+            vsize: vsize as f32,
         }
     }
 
@@ -48,12 +52,16 @@ impl Camera {
         let object_y = self.half_height - ((y + 0.5) * self.pixel_size);
 
         // Position of the pixel in the camera's object space.
-        let pixel_object_point = vec4(object_x, object_y, /* - */ 1.0, 1.0);
+        let pixel_object_point = vec4(object_x, object_y, -1.0, 1.0);
 
         // Transform to world space.
         let pixel_world_point = self.transform_inverse * pixel_object_point;
         let origin = self.transform_inverse * vec4(0.0, 0.0, 0.0, 1.0);
-        let direction = pixel_world_point - origin;
+        let direction = (pixel_world_point - origin).normalize();
         Ray { origin, direction }
+    }
+
+    pub fn size(&self) -> (f32, f32) {
+        (self.hsize, self.vsize)
     }
 }

@@ -21,7 +21,7 @@ pub struct Comps {
     pub is_inside: bool,
 }
 
-pub const MAX_HITS: usize = 4;
+pub const MAX_HITS: usize = 25;
 
 pub struct Intersections {
     hits: [Intersection; MAX_HITS],
@@ -37,7 +37,7 @@ impl Ray {
     pub(crate) fn transform(&self, mat: Mat4) -> Ray {
         Ray {
             origin: mat * self.origin,
-            direction: (mat * self.direction).normalize(),
+            direction: mat * self.direction,  // don't normalize here! it messes up the t calculated inside a transform
         }
     }
 }
@@ -45,6 +45,7 @@ impl Ray {
 impl Intersections {
     #[allow(clippy::manual_swap)]
     pub fn add(&mut self, mut hit: Intersection) {
+        debug_assert!(self.count < MAX_HITS as u32);
         if hit.t >= 0.0 {
             self.is_hit = true;
         }

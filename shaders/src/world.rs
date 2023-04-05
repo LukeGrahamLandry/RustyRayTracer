@@ -9,8 +9,13 @@ pub struct WorldView<'a> {
 }
 
 impl<'a> WorldView<'a> {
+    // Be careful not to try to return Intersections by value from a function.
+    // It breaks the msl code gen when it tries to copy the array.
+    // It generates spvArrayCopyFromStackToStack1 and the generics get messed up somehow.
+    // I wonder if passing --msl-force-native-arrays to spirv-cross would also fix it but idk how to do that.
     pub fn color_at(&self, ray: &Ray) -> Vec3A {
-        let hits = self.intersect(ray);
+        let mut hits = Intersections::default();
+        self.intersect(ray, &mut hits);
         if hits.has_hit() {
             let comps = self.prepare_comps(hits.get_hit(), ray);
             self.shade_hit(&comps)
@@ -19,15 +24,11 @@ impl<'a> WorldView<'a> {
         }
     }
 
-    pub fn intersect(&self, ray: &Ray) -> Intersections {
-        let mut hits = Intersections::default();
-
+    pub fn intersect(&self, ray: &Ray, hits: &mut Intersections) {
         for i in 0..self.shapes.len() {
             let shape = &self.shapes[i];
-            shape.intersect(&ray, &mut hits);
+            shape.intersect(&ray, hits);
         }
-
-        hits
     }
 
     pub fn shade_hit(&self, comps: &Comps) -> Vec3A {

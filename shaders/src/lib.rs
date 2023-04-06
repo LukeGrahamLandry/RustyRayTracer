@@ -7,14 +7,12 @@ pub mod shapes;
 pub mod world;
 
 use crate::camera::Camera;
-use crate::material::{Material, PointLight};
-use crate::ray::Intersections;
-use crate::shapes::{Shape, ShapeType};
+use crate::material::PointLight;
+
+use crate::shapes::Shape;
 use crate::world::WorldView;
-use core::f32::consts::PI;
-use spirv_std::glam::{
-    vec2, vec3, vec4, Mat4, Vec2, Vec3, Vec3A, Vec3Swizzles, Vec4, Vec4Swizzles,
-};
+
+use spirv_std::glam::{vec2, Vec2, Vec3Swizzles, Vec4, Vec4Swizzles};
 use spirv_std::spirv;
 
 pub struct ShaderInputs {
@@ -32,7 +30,7 @@ pub fn main_fs(
 ) {
     let world = WorldView { shapes, lights };
     let ray = inputs.camera.ray_for_pixel(pixel_pos.x, pixel_pos.y);
-    *out_colour = world.color_at(&ray).xyzz();
+    *out_colour = world.color_at(ray).xyzz();
 }
 
 // Big triangle that covers the screen so the fragment shader runs for every pixel.

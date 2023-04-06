@@ -1,4 +1,4 @@
-use spirv_std::glam::{vec3, vec4, Vec3, Vec3A, Vec4};
+use spirv_std::glam::{Vec3A, Vec4};
 use spirv_std::num_traits::Pow;
 
 #[repr(C)]
@@ -13,6 +13,7 @@ pub struct Material {
     pub diffuse: f32,
     pub specular: f32,
     pub shininess: f32,
+    pub reflective: f32,
 }
 
 #[repr(C)]
@@ -70,6 +71,7 @@ impl Default for Material {
             diffuse: 0.9,
             specular: 0.9,
             shininess: 200.0,
+            reflective: 0.0,
         }
     }
 }

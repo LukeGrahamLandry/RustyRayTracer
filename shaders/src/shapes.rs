@@ -1,6 +1,6 @@
 use crate::material::Material;
 use crate::ray::{Intersection, Intersections, Ray};
-use spirv_std::glam::{vec4, Mat4, Vec2, Vec3, Vec4};
+use spirv_std::glam::{vec4, Mat4, Vec4};
 use spirv_std::num_traits::Float;
 
 // even if this only has one variant and could be zero sized, it MUST be repr(C) and waste space to make it work in storage buffers.
@@ -8,7 +8,7 @@ use spirv_std::num_traits::Float;
 #[derive(Copy, Clone)]
 pub enum ShapeType {
     Sphere,
-    Plane
+    Plane,
 }
 
 #[repr(C)]
@@ -82,10 +82,7 @@ impl Shape {
     fn local_intersect_plane(&self, ray: Ray, hits: &mut Intersections) {
         if ray.direction.y.abs() > 0.0 {
             let t = -ray.origin.y / ray.direction.y;
-            hits.add(Intersection {
-                t,
-                obj: self.index,
-            });
+            hits.add(Intersection { t, obj: self.index });
         }
     }
 }

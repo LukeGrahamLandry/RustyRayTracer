@@ -3,14 +3,12 @@ use ash::vk;
 use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, AllocationScheme};
 use gpu_allocator::MemoryLocation;
 use shaders::camera::Camera;
-use shaders::shapes::Shape;
 
 use std::io::Cursor;
 use std::mem::{self, size_of};
 use std::time::Instant;
 use std::{default::Default, ffi::CString, ops::Drop};
 
-use crate::scene::World;
 use shaders::ShaderInputs;
 
 use super::base::RenderBase;
@@ -66,6 +64,8 @@ impl RenderCtx {
             )
         };
 
+        // Can look at the code it generates.
+        // spirv-cross "target/spirv-builder/spirv-unknown-vulkan1.1/release/deps/shaders.spv" --msl > target/generated.metal
         dbg!(env!("shaders.spv"));
         let spirv = read_spv(&mut Cursor::new(include_bytes!(env!("shaders.spv")))).unwrap();
         let shader_info = vk::ShaderModuleCreateInfo::builder().code(&spirv);
@@ -342,7 +342,7 @@ impl RenderCtx {
 
         self.cleanup_swapchain();
 
-        let (swapchain, extent, swapchain_size) = self.base.create_swapchain();
+        let (swapchain, extent, _swapchain_size) = self.base.create_swapchain();
         self.swapchain = swapchain;
         self.extent = extent;
         self.image_views = self.base.create_image_views(self.swapchain);

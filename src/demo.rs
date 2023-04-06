@@ -1,8 +1,8 @@
 use std::f32::consts::PI;
 
+use shaders::shapes::ShapeType;
 use shaders::{camera::Camera, material::PointLight, shapes::Shape};
 use spirv_std::glam::{vec3, vec4, Mat4, Vec3A};
-use shaders::shapes::ShapeType;
 
 use crate::scene::World;
 
@@ -22,6 +22,7 @@ pub fn spheres_world(use_plane: bool) -> World {
     middle.material.colour = Vec3A::new(0.1, 1.0, 0.5);
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
+    middle.material.reflective = 0.15;
 
     let mut right = Shape::default();
     right.set_transform(
@@ -30,6 +31,7 @@ pub fn spheres_world(use_plane: bool) -> World {
     right.material.colour = Vec3A::new(0.5, 1.0, 0.1);
     right.material.diffuse = 0.7;
     right.material.specular = 0.3;
+    right.material.reflective = 0.15;
 
     let mut left = Shape::default();
     left.set_transform(
@@ -38,6 +40,7 @@ pub fn spheres_world(use_plane: bool) -> World {
     left.material.colour = Vec3A::new(1.0, 0.8, 0.1);
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
+    left.material.reflective = 0.15;
 
     let mut shapes = vec![middle, right, left];
 
@@ -73,7 +76,7 @@ pub fn spheres_world(use_plane: bool) -> World {
         shapes.append(&mut vec![floor, left_wall, right_wall])
     }
 
-    let mut camera = Camera::new(1280, 720, PI / 3.0);
+    let mut camera = Camera::new(1280 / 2, 720 / 2, PI / 3.0);
     camera.set_transform(Mat4::look_at_rh(
         vec3(0.0, 1.5, -5.0),
         vec3(0.0, 1.0, 0.0),

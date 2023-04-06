@@ -9,7 +9,7 @@ use winit::{
 
 use raytracer::timer::FrameTimer;
 use raytracer::vulkan::base::RenderBase;
-use raytracer::{demo, scene::World};
+use raytracer::{demo};
 
 pub fn main() {
     println!("Loading...");

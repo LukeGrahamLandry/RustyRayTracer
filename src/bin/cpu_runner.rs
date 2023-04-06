@@ -6,7 +6,7 @@ use std::time::Instant;
 use rayon::prelude::*;
 use raytracer::demo;
 use softbuffer::GraphicsContext;
-use spirv_std::glam::{vec2, vec4, Vec2, Vec4};
+use spirv_std::glam::{vec4, Vec4};
 use winit::event::{Event, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
@@ -85,9 +85,9 @@ fn main() {
 
 // the shader outputs colour as an rgb vector (0.0-1.0) but the screen wants a packed int with one byte for each component
 fn to_packed_colour(v: Vec4) -> u32 {
-    clamp_clour(v.z) | clamp_clour(v.y) << 8 | clamp_clour(v.x) << 16
+    clamp_colour(v.z) | clamp_colour(v.y) << 8 | clamp_colour(v.x) << 16
 }
 
-fn clamp_clour(f: f32) -> u32 {
+fn clamp_colour(f: f32) -> u32 {
     (f.clamp(0.0, 1.0) * 255.0).round() as u32
 }

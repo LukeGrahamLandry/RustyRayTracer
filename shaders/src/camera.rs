@@ -1,4 +1,4 @@
-use spirv_std::glam::{vec4, Mat4, Vec4};
+use spirv_std::glam::{vec4, Mat4};
 use spirv_std::num_traits::Float;
 
 use crate::ray::Ray;

@@ -1,8 +1,7 @@
 use std::f32::consts::PI;
 
-use shaders::shapes::ShapeType;
-use shaders::{camera::Camera, material::PointLight, shapes::Shape};
-use spirv_std::glam::{vec3, vec4, Mat4, Vec3A};
+use crate::types::{Camera, PointLight, Shape, ShapeType};
+use glam::{vec3, vec4, Mat4, Vec3A};
 
 use crate::scene::World;
 

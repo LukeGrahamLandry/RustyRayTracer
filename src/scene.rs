@@ -1,6 +1,4 @@
-use shaders::camera::Camera;
-use shaders::material::PointLight;
-use shaders::shapes::Shape;
+use crate::types::{Camera, PointLight, Shape};
 
 pub struct World {
     pub shapes: Vec<Shape>,

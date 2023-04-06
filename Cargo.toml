@@ -5,29 +5,9 @@ edition = "2021"
 default-run="gpu_runner"
 
 [dependencies]
-ash = "0.37"
-ash-window = "0.12"
-raw-window-handle = "0.5.1"
+metal = "0.24.0"
 winit = "0.28.3"
-structopt = "0.3.20"
-cfg-if = "1.0.0"
-spirv-builder = "0.6.1"
-shaders={path = "shaders"}
-rayon="1.7.0"
-softbuffer = "0.2.0"
-spirv-std = { version = "0.6" }
-gpu-allocator = "0.22.0"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-ash-molten = { version = "0.13.1", features = ["pre-built"] }
-
-[build-dependencies]
-spirv-builder = "0.6.1"
-
-# Compile build-dependencies in release mode with
-# the same settings as regular dependencies.
-[profile.release.build-override]
-opt-level = 3
-codegen-units = 16
-[profile.dev.build-override]
-opt-level = 3
+cocoa = "0.24.0"
+glam = "0.22"
+core-graphics-types = "0.1"
+objc = "0.2.7"

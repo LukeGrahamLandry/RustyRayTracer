@@ -8,6 +8,7 @@ use spirv_std::num_traits::Float;
 #[derive(Copy, Clone)]
 pub enum ShapeType {
     Sphere,
+    Plane
 }
 
 #[repr(C)]
@@ -43,12 +44,16 @@ impl Shape {
             ShapeType::Sphere => {
                 self.local_intersect_sphere(object_ray, hits);
             }
+            ShapeType::Plane => {
+                self.local_intersect_plane(object_ray, hits);
+            }
         }
     }
 
     pub fn local_normal_at(&self, object_space_point: Vec4) -> Vec4 {
         match self.shape {
             ShapeType::Sphere => object_space_point - vec4(0.0, 0.0, 0.0, 1.0),
+            ShapeType::Plane => vec4(0.0, 1.0, 0.0, 0.0),
         }
     }
 
@@ -69,6 +74,16 @@ impl Shape {
             });
             hits.add(Intersection {
                 t: t2,
+                obj: self.index,
+            });
+        }
+    }
+
+    fn local_intersect_plane(&self, ray: Ray, hits: &mut Intersections) {
+        if ray.direction.y.abs() > 0.0 {
+            let t = -ray.origin.y / ray.direction.y;
+            hits.add(Intersection {
+                t,
                 obj: self.index,
             });
         }

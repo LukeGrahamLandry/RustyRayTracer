@@ -1,4 +1,4 @@
-use spirv_std::glam::{Mat4, Vec4};
+use spirv_std::glam::{Affine3A, Mat4, Vec4};
 
 pub struct Ray {
     pub origin: Vec4,
@@ -19,6 +19,7 @@ pub struct Comps {
     pub eyev: Vec4,
     pub normalv: Vec4,
     pub is_inside: bool,
+    pub over_point: Vec4,
 }
 
 pub const MAX_HITS: usize = 25;
@@ -37,7 +38,7 @@ impl Ray {
     pub(crate) fn transform(&self, mat: Mat4) -> Ray {
         Ray {
             origin: mat * self.origin,
-            direction: mat * self.direction,  // don't normalize here! it messes up the t calculated inside a transform
+            direction: mat * self.direction, // don't normalize here! it messes up the t calculated inside a transform
         }
     }
 }

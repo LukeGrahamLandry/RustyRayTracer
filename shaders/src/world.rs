@@ -1,12 +1,16 @@
 use crate::material::PointLight;
 use crate::ray::{Comps, Intersection, Intersections, Ray};
 use crate::shapes::Shape;
-use spirv_std::glam::Vec3A;
+use spirv_std::glam::{Vec3A, Vec4};
+use spirv_std::num_traits::Float;
+use spirv_std::num_traits::Pow;
 
 pub struct WorldView<'a> {
     pub shapes: &'a [Shape],
     pub lights: &'a [PointLight],
 }
+
+pub const EPSILON: f32 = 0.01;
 
 impl<'a> WorldView<'a> {
     // Be careful not to try to return Intersections by value from a function.
@@ -37,13 +41,30 @@ impl<'a> WorldView<'a> {
 
         for i in 0..self.lights.len() {
             let light = &self.lights[i];
-            colour +=
-                sphere
-                    .material
-                    .lighting(light, comps.point, comps.eyev, comps.normalv, false);
+            let is_shadowed = self.is_shadowed(light, comps.over_point);
+            colour += sphere.material.lighting(
+                light,
+                comps.over_point,
+                comps.eyev,
+                comps.normalv,
+                is_shadowed,
+            );
         }
 
         colour
+    }
+
+    pub fn is_shadowed(&self, light: &PointLight, world_point: Vec4) -> bool {
+        let light_dir = light.position - world_point;
+        let ray = Ray {
+            origin: world_point,
+            direction: light_dir.normalize(),
+        };
+
+        let mut hits = Intersections::default();
+        self.intersect(&ray, &mut hits);
+
+        hits.has_hit() && hits.get_hit().t.powi(2) < light_dir.length_squared().into()
     }
 
     pub fn prepare_comps(&self, hit: &Intersection, ray: &Ray) -> Comps {
@@ -56,6 +77,8 @@ impl<'a> WorldView<'a> {
             normalv = -normalv;
         }
 
+        let tiny = normalv * EPSILON;
+
         Comps {
             t: hit.t,
             obj: hit.obj,
@@ -63,6 +86,7 @@ impl<'a> WorldView<'a> {
             eyev,
             normalv,
             is_inside,
+            over_point: point + tiny,
         }
     }
 }

@@ -1,5 +1,7 @@
 **/target
 **/.DS_Store
 .idea
-**/*.air
-**/*.metallib
+
+**/xcuserstate
+**/xcuserdata
+*.xcworkspace

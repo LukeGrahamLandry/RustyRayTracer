@@ -9,12 +9,23 @@
 /* Begin PBXBuildFile section */
 		A394FFE429E3D08400D58DAF /* shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = A394FFE329E3D08400D58DAF /* shaders.metal */; };
 		A394FFED29E48C0D00D58DAF /* material.metal in Sources */ = {isa = PBXBuildFile; fileRef = A394FFEC29E48C0D00D58DAF /* material.metal */; };
+		A394FFF029E4A78F00D58DAF /* world.metal in Sources */ = {isa = PBXBuildFile; fileRef = A394FFEF29E4A78F00D58DAF /* world.metal */; };
+		A394FFF229E4AA9B00D58DAF /* shapes.metal in Sources */ = {isa = PBXBuildFile; fileRef = A394FFF129E4AA9B00D58DAF /* shapes.metal */; };
+		A394FFF829E4ABC200D58DAF /* ray.metal in Sources */ = {isa = PBXBuildFile; fileRef = A394FFF729E4ABC200D58DAF /* ray.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A394FFE029E3D08400D58DAF /* shaders.metallib */ = {isa = PBXFileReference; explicitFileType = "archive.metal-library"; includeInIndex = 0; path = shaders.metallib; sourceTree = BUILT_PRODUCTS_DIR; };
 		A394FFE329E3D08400D58DAF /* shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = shaders.metal; sourceTree = "<group>"; };
 		A394FFEC29E48C0D00D58DAF /* material.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = material.metal; sourceTree = "<group>"; };
+		A394FFEF29E4A78F00D58DAF /* world.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = world.metal; sourceTree = "<group>"; };
+		A394FFF129E4AA9B00D58DAF /* shapes.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = shapes.metal; sourceTree = "<group>"; };
+		A394FFF329E4AAD100D58DAF /* shapes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = shapes.h; sourceTree = "<group>"; };
+		A394FFF429E4AB4600D58DAF /* material.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = material.h; sourceTree = "<group>"; };
+		A394FFF529E4AB5B00D58DAF /* world.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = world.h; sourceTree = "<group>"; };
+		A394FFF729E4ABC200D58DAF /* ray.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ray.metal; sourceTree = "<group>"; };
+		A394FFF929E4AC0B00D58DAF /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
+		A394FFFA29E4AC4300D58DAF /* ray.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ray.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -37,8 +48,16 @@
 		A394FFE229E3D08400D58DAF /* src */ = {
 			isa = PBXGroup;
 			children = (
-				A394FFE329E3D08400D58DAF /* shaders.metal */,
+				A394FFF929E4AC0B00D58DAF /* common.h */,
+				A394FFF429E4AB4600D58DAF /* material.h */,
+				A394FFFA29E4AC4300D58DAF /* ray.h */,
+				A394FFF329E4AAD100D58DAF /* shapes.h */,
+				A394FFF529E4AB5B00D58DAF /* world.h */,
 				A394FFEC29E48C0D00D58DAF /* material.metal */,
+				A394FFF729E4ABC200D58DAF /* ray.metal */,
+				A394FFE329E3D08400D58DAF /* shaders.metal */,
+				A394FFF129E4AA9B00D58DAF /* shapes.metal */,
+				A394FFEF29E4A78F00D58DAF /* world.metal */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -98,6 +117,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A394FFF829E4ABC200D58DAF /* ray.metal in Sources */,
+				A394FFF029E4A78F00D58DAF /* world.metal in Sources */,
+				A394FFF229E4AA9B00D58DAF /* shapes.metal in Sources */,
 				A394FFED29E48C0D00D58DAF /* material.metal in Sources */,
 				A394FFE429E3D08400D58DAF /* shaders.metal in Sources */,
 			);

@@ -6,6 +6,7 @@ use core_graphics_types::geometry::CGSize;
 use metal::*;
 use objc::{rc::autoreleasepool, runtime::YES};
 use std::mem;
+use std::time::Instant;
 use winit::platform::macos::WindowExtMacOS;
 
 use winit::{
@@ -15,6 +16,7 @@ use winit::{
 use winit::event::VirtualKeyCode;
 use winit::event_loop::EventLoop;
 use winit::window::Window;
+use crate::scene::World;
 use crate::timer::FrameTimer;
 
 pub struct AppState {
@@ -22,11 +24,13 @@ pub struct AppState {
     window: Window,
     pub(crate) command_queue: CommandQueue,
     pub(crate) pipeline_state: RenderPipelineState,
-    timer: FrameTimer
+    timer: FrameTimer,
+    pub(crate) start: Instant,
+    pub(crate) world: World
 }
 
 impl AppState {
-    pub fn new() -> (AppState, EventLoop<()>) {
+    pub fn new(world: World) -> (AppState, EventLoop<()>) {
         let event_loop = winit::event_loop::EventLoop::new();
         let size = winit::dpi::LogicalSize::new(800, 600);
 
@@ -81,7 +85,9 @@ impl AppState {
             window,
             command_queue,
             pipeline_state,
-            timer: FrameTimer::new()
+            timer: FrameTimer::new(),
+            world,
+            start: Instant::now()
         }, event_loop)
     }
 

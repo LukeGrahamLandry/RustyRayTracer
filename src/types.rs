@@ -87,6 +87,8 @@ pub const REFLECTION_DEPTH: u32 = 5;
 pub struct ShaderInputs {
     pub time: f32,
     pub camera: Camera,
+    pub shape_count: u32,
+    pub light_count: u32
 }
 
 impl Default for Material {

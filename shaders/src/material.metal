@@ -1,7 +1,1 @@
-#include <metal_stdlib>
-using namespace metal;
-
-
-struct Material {
-    
-};
+#include "material.h"

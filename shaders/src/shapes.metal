@@ -9,6 +9,10 @@ float4 Shape::normal_at(float4 world_pos) const {
             object_space_normal = object_space_point - Point(0, 0, 0);
             break;
         }
+        case Plane: {
+            object_space_normal = Vector(0.0, 1.0, 0.0);
+            break;
+        }
     }
     
     float4 world_space_normal = transpose(transform_inverse) * object_space_normal;
@@ -22,7 +26,12 @@ void Shape::intersect(const thread Ray& world_ray, thread Intersections& hits) c
         case Sphere: {
             return local_intersect_sphere(object_space_ray, hits);
         }
+        case Plane: {
+            return local_intersect_plane(object_space_ray, hits);
+        }
     }
+    
+    // Unreachable
 }
 
 void Shape::local_intersect_sphere(const thread Ray& ray, thread Intersections& hits) const {
@@ -38,5 +47,12 @@ void Shape::local_intersect_sphere(const thread Ray& ray, thread Intersections& 
 
         hits.add(t1, index);
         hits.add(t2, index);
+    }
+}
+
+void Shape::local_intersect_plane(const thread Ray& ray, thread Intersections& hits) const {
+    if (abs(ray.direction.y) > 0) {
+        float t = -ray.origin.y / ray.direction.y;
+        hits.add(t, index);
     }
 }

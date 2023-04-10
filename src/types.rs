@@ -12,7 +12,7 @@ pub struct Camera {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Material {
     pub colour: Vec3A,
     pub ambient: f32,
@@ -65,14 +65,14 @@ pub struct Intersections {
 
 // even if this only has one variant and could be zero sized, it MUST be repr(C) and waste space to make it work in storage buffers.
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum ShapeType {
     Sphere,
     Plane,
 }
 
 #[repr(C)]
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Shape {
     pub transform_inverse: Mat4,
     pub shape: ShapeType,
@@ -84,6 +84,7 @@ pub struct Shape {
 pub const EPSILON: f32 = 0.01;
 pub const REFLECTION_DEPTH: u32 = 5;
 
+#[repr(C)]
 pub struct ShaderInputs {
     pub time: f32,
     pub camera: Camera,

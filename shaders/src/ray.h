@@ -43,6 +43,7 @@ typedef struct Intersections {
     };
 } Intersections;
 
+// TODO: default constructor 
 inline Intersections intersections() {
     return {0, false, {}};
 }

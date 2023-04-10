@@ -29,7 +29,7 @@ void Intersections::add(float t, int shape_index) {
         is_hit = true;
     }
 
-    for (int i=0; i<count; i++) {
+    for (int i=0;i<count;i++) {
         if (hit.t < hits[i].t) {
             Intersection temp = hits[i];
             hits[i] = hit;
@@ -50,5 +50,5 @@ Intersection Intersections::get_hit() const {
     }
     
     // Unreachable (if you checked has_hit first)
-    return {};
+    return {0, 0};
 };

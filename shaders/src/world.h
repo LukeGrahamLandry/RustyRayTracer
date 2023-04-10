@@ -13,8 +13,8 @@ typedef struct PointLight {
 typedef struct {
     float time;
     Camera camera;
-    int shape_count;
-    int light_count;
+    uint32_t shape_count;
+    uint32_t light_count;
 } ShaderInputs;
 
 typedef struct Comps {
@@ -25,6 +25,7 @@ typedef struct Comps {
     float4 normalv;
     bool inside;
     float4 over_point;
+    float4 reflectv;
 } Comps;
 
 typedef struct World {
@@ -32,7 +33,7 @@ typedef struct World {
     const device PointLight* lights;
     constant ShaderInputs& inputs;
     
-    float3 color_at(const thread Ray& ray) const;
+    float3 color_at(Ray ray) const;
     void intersect(const thread Ray& ray, thread Intersections& hits) const;
     float3 shade_hit(const thread Comps& comps) const;
     bool is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const;

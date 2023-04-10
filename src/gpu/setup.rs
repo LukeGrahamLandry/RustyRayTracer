@@ -18,6 +18,7 @@ use winit::event_loop::EventLoop;
 use winit::window::Window;
 use crate::scene::World;
 use crate::timer::FrameTimer;
+use crate::types::{PointLight, Shape};
 
 pub struct AppState {
     pub(crate) layer: MetalLayer,
@@ -26,7 +27,9 @@ pub struct AppState {
     pub(crate) pipeline_state: RenderPipelineState,
     timer: FrameTimer,
     pub(crate) start: Instant,
-    pub(crate) world: World
+    pub(crate) world: World,
+    pub shapes_buffer: Buffer,
+    pub lights_buffer: Buffer,
 }
 
 impl AppState {
@@ -80,6 +83,18 @@ impl AppState {
 
         let command_queue = device.new_command_queue();
 
+        let shapes_buffer = device.new_buffer_with_data(
+            world.shapes.as_ptr() as *const _,
+            (world.shapes.len() * mem::size_of::<Shape>()) as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache | MTLResourceOptions::StorageModeManaged,
+        );
+
+        let lights_buffer = device.new_buffer_with_data(
+            world.lights.as_ptr() as *const _,
+            (world.lights.len() * mem::size_of::<PointLight>()) as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache | MTLResourceOptions::StorageModeManaged,
+        );
+
         (AppState {
             layer,
             window,
@@ -87,7 +102,9 @@ impl AppState {
             pipeline_state,
             timer: FrameTimer::new(),
             world,
-            start: Instant::now()
+            start: Instant::now(),
+            shapes_buffer,
+            lights_buffer
         }, event_loop)
     }
 

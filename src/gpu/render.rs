@@ -27,6 +27,8 @@ impl AppState {
             light_count: self.world.lights.len() as u32,
         };
         encoder.set_fragment_bytes(0, size_of::<ShaderInputs>() as u64, ptr(&inputs));
+        encoder.set_fragment_buffer(1, Some(&self.shapes_buffer), 0);
+        encoder.set_fragment_buffer(2, Some(&self.lights_buffer), 0);
         encoder.draw_primitives(
             MTLPrimitiveType::Triangle,
             0,

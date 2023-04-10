@@ -17,3 +17,38 @@ Ray Camera::ray_for_pixel(float x, float y) const constant {
     float4 ray_direction = pixel_world_point - camera_world_point;
     return {camera_world_point, ray_direction};
 };
+
+
+Ray Ray::transform(float4x4 mat) const {
+    return {mat * origin, mat * direction};
+}
+
+void Intersections::add(float t, int shape_index) {
+    Intersection hit = {t, shape_index};
+    if (hit.t >= 0) {
+        is_hit = true;
+    }
+
+    for (int i=0; i<count; i++) {
+        if (hit.t < hits[i].t) {
+            Intersection temp = hits[i];
+            hits[i] = hit;
+            hit = temp;
+        }
+    }
+
+    hits[count] = hit;
+    count += 1;
+}
+
+
+Intersection Intersections::get_hit() const {
+    for (int i=0; i<count; i++) {
+        if (hits[i].t >= 0.0) {
+            return hits[i];
+        }
+    }
+    
+    // Unreachable (if you checked has_hit first)
+    return {};
+};

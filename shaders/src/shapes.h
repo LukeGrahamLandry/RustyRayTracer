@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "material.h"
+#include "ray.h"
 
 typedef enum ShapeType {
     Sphere,
@@ -13,6 +14,10 @@ typedef struct Shape {
     ShapeType shape;
     int index;
     Material material;
+    
+    float4 normal_at(float4 world_pos) const;
+    void intersect(const thread Ray& world_ray, thread Intersections& hits) const;
+    void local_intersect_sphere(const thread Ray& object_ray, thread Intersections& hits) const;
 } Shape;
 
 #endif

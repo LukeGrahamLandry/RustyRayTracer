@@ -45,8 +45,9 @@ void Shape::local_intersect_sphere(const thread Ray& ray, thread Intersections& 
     float discriminant = (b * b) - (4 * a * c);
 
     if (discriminant >= 0) {
-        float t1 = (-b - sqrt(discriminant)) / (2 * a);
-        float t2 = (-b + sqrt(discriminant)) / (2 * a);
+        float d = sqrt(discriminant);
+        float t1 = (-b - d) / (2 * a);
+        float t2 = (-b + d) / (2 * a);
 
         hits.add(t1, index);
         hits.add(t2, index);

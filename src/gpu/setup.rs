@@ -16,9 +16,8 @@ use winit::{
 use winit::event::VirtualKeyCode;
 use winit::event_loop::EventLoop;
 use winit::window::Window;
-use crate::scene::World;
 use crate::timer::FrameTimer;
-use crate::types::{PointLight, Shape};
+use crate::shader_types::{PointLight, Shape, World};
 
 pub struct AppState {
     pub(crate) layer: MetalLayer,
@@ -59,10 +58,9 @@ impl AppState {
         let draw_size = window.inner_size();
         layer.set_drawable_size(CGSize::new(draw_size.width as f64, draw_size.height as f64));
 
+        // TODO: include bytes
         let library_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("target/Build/Products/Debug/shaders.metallib");
-        // .join("src/gpu/shaders/shaders.metallib");
-        // xcrun -sdk macosx metal -c src/gpu/shaders/shaders.metal -o src/gpu/shaders/shaders.air && xcrun -sdk macosx metallib src/gpu/shaders/shaders.air -o src/gpu/shaders/shaders.metallib
+            .join("shaders/build/Release/shaders.metallib");
 
         let library = device.new_library_with_file(library_path).unwrap();
         let vert = library.get_function("full_screen_triangle", None).unwrap();
@@ -84,14 +82,14 @@ impl AppState {
         let command_queue = device.new_command_queue();
 
         let shapes_buffer = device.new_buffer_with_data(
-            world.shapes.as_ptr() as *const _,
-            (world.shapes.len() * mem::size_of::<Shape>()) as u64,
+            world.get_shapes().as_ptr() as *const _,
+            (world.get_shapes().len() * mem::size_of::<Shape>()) as u64,
             MTLResourceOptions::CPUCacheModeDefaultCache | MTLResourceOptions::StorageModeManaged,
         );
 
         let lights_buffer = device.new_buffer_with_data(
-            world.lights.as_ptr() as *const _,
-            (world.lights.len() * mem::size_of::<PointLight>()) as u64,
+            world.get_lights().as_ptr() as *const _,
+            (world.get_lights().len() * mem::size_of::<PointLight>()) as u64,
             MTLResourceOptions::CPUCacheModeDefaultCache | MTLResourceOptions::StorageModeManaged,
         );
 

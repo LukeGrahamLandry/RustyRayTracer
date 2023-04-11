@@ -4,8 +4,8 @@
 float3 World::color_at(Ray ray) const {
     float3 colour = float3(0);
     float prev_reflectance = 1;
+    Intersections hits = intersections();
     for (int i=0;i<MAX_REFLECTIONS;i++) {
-        Intersections hits = intersections();
         intersect(ray, hits);
 
         if (hits.has_hit()) {
@@ -17,6 +17,7 @@ float3 World::color_at(Ray ray) const {
                 break;
             }
             ray = Ray {comps.over_point, comps.reflectv};
+            hits.clear();
         } else {
             break;
         }
@@ -36,7 +37,8 @@ float3 World::shade_hit(const thread Comps& comps) const {
     float3 colour = float3(0);
     for (uint32_t i=0;i<inputs.light_count;i++){
         PointLight light = lights[i];
-        colour += comps.material.lighting(light, comps.over_point, comps.eyev, comps.normalv, is_shadowed(light.position, comps.over_point));
+        bool shadowed = is_shadowed(light.position, comps.over_point);
+        colour += comps.material.lighting(light, comps.over_point, comps.eyev, comps.normalv, shadowed);
     }
     
     return colour;

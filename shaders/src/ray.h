@@ -41,6 +41,10 @@ typedef struct Intersections {
     inline bool has_hit() const {
         return is_hit;
     };
+    inline void clear() {
+        count = 0;
+        is_hit = false;
+    }
 } Intersections;
 
 // TODO: default constructor 

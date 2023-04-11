@@ -1,7 +1,53 @@
 use glam::{Mat4, Vec3A, Vec4};
 
+#[derive(Default)]
+pub struct World {
+    shapes: Vec<Shape>,
+    lights: Vec<PointLight>,
+    pub camera: Camera,
+}
+
+impl World {
+    pub fn add_shape(&mut self, mut shape: Shape) {
+        debug_assert!(is_frac(shape.material.diffuse)
+            && is_frac(shape.material.ambient)
+            && is_frac(shape.material.reflective)
+            && is_frac(shape.material.specular)
+            && is_colour(shape.material.colour)
+        );
+
+        shape.index = self.shapes.len() as u32;
+        self.shapes.push(shape);
+    }
+
+    pub fn add_light(&mut self, light: PointLight) {
+        debug_assert!(is_colour(light.intensity));
+        self.lights.push(light);
+    }
+
+    pub fn get_shapes(&self) -> &[Shape] {
+        self.shapes.as_slice()
+    }
+
+    pub fn get_lights(&self) -> &[PointLight] {
+        self.lights.as_slice()
+    }
+}
+
+fn is_frac(x: f32) -> bool {
+    0.0 <= x && x <= 1.0
+}
+
+fn is_colour(c: Vec3A) -> bool {
+    is_frac(c.x) && is_frac(c.y) && is_frac(c.z)
+}
+
+// The structs below are used to pass information to the shaders.
+// It's important that they are all repr(C) and that field orders match.
+// They could be copy but it feels like I might accidentally modify after adding a copy to the world.
+
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct Camera {
     transform_inverse: Mat4,
     pixel_size: f32,
@@ -12,7 +58,7 @@ pub struct Camera {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Material {
     pub colour: Vec3A,
     pub ambient: f32,
@@ -23,47 +69,12 @@ pub struct Material {
 }
 
 #[repr(C)]
+#[derive(Clone, Debug)]
 pub struct PointLight {
     pub position: Vec4,
     pub intensity: Vec3A,
 }
 
-#[repr(C)]
-pub struct Ray {
-    pub origin: Vec4,
-    pub direction: Vec4,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct Intersection {
-    pub t: f32,
-    pub obj: u32,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct Comps {
-    pub t: f32,
-    pub obj: u32,
-    pub point: Vec4,
-    pub eyev: Vec4,
-    pub normalv: Vec4,
-    pub is_inside: bool,
-    pub over_point: Vec4,
-    pub reflectv: Vec4,
-}
-
-pub const MAX_HITS: usize = 100;
-
-#[repr(C)]
-pub struct Intersections {
-    hits: [Intersection; MAX_HITS],
-    count: u32,
-    is_hit: bool,
-}
-
-// even if this only has one variant and could be zero sized, it MUST be repr(C) and waste space to make it work in storage buffers.
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum ShapeType {
@@ -71,8 +82,8 @@ pub enum ShapeType {
     Plane,
 }
 
-#[repr(C)]
-#[derive(Default, Debug)]
+#[repr(C)]  // Clone works because the world sets the index to be correct
+#[derive(Clone, Default, Debug)]
 pub struct Shape {
     pub transform_inverse: Mat4,
     pub shape: ShapeType,
@@ -81,10 +92,8 @@ pub struct Shape {
     pub material: Material,
 }
 
-pub const EPSILON: f32 = 0.01;
-pub const REFLECTION_DEPTH: u32 = 5;
-
 #[repr(C)]
+#[derive(Clone, Debug)]
 pub struct ShaderInputs {
     pub time: f32,
     pub camera: Camera,

@@ -1,6 +1,6 @@
 extern crate raytracer;
 
-use raytracer::demo::{chapter7, chapter9};
+use raytracer::demo::*;
 
 pub fn main() {
     let world = chapter7();

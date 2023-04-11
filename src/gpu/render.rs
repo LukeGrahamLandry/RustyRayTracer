@@ -3,7 +3,7 @@ use std::mem::size_of;
 use std::time::Instant;
 use metal::*;
 use crate::gpu::setup::AppState;
-use crate::types::ShaderInputs;
+use crate::shader_types::ShaderInputs;
 
 impl AppState {
     pub(crate) fn render(&self) {
@@ -23,8 +23,8 @@ impl AppState {
         let inputs = ShaderInputs {
             time: (Instant::now() - self.start).as_secs_f32(),
             camera: self.world.camera,
-            shape_count: self.world.shapes.len() as u32,
-            light_count: self.world.lights.len() as u32,
+            shape_count: self.world.get_shapes().len() as u32,
+            light_count: self.world.get_lights().len() as u32
         };
         encoder.set_fragment_bytes(0, size_of::<ShaderInputs>() as u64, ptr(&inputs));
         encoder.set_fragment_buffer(1, Some(&self.shapes_buffer), 0);

@@ -14,7 +14,7 @@ Ray Camera::ray_for_pixel(float x, float y) const constant {
     // Transform to world space.
     float4 pixel_world_point = transform_inverse * pixel_object_point;
     float4 camera_world_point = transform_inverse * Point(0, 0, 0);
-    float4 ray_direction = pixel_world_point - camera_world_point;
+    float4 ray_direction = normalize(pixel_world_point - camera_world_point);
     return {camera_world_point, ray_direction};
 };
 
@@ -44,11 +44,11 @@ void Intersections::add(float t, int shape_index) {
 
 Intersection Intersections::get_hit() const {
     for (int i=0; i<count; i++) {
-        if (hits[i].t >= 0.0) {
+        if (hits[i].t >= 0) {
             return hits[i];
         }
     }
     
-    // Unreachable (if you checked has_hit first)
-    return {0, 0};
+    // check has_hit first
+    __builtin_unreachable();
 };

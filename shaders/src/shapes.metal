@@ -13,6 +13,9 @@ float4 Shape::normal_at(float4 world_pos) const {
             object_space_normal = Vector(0.0, 1.0, 0.0);
             break;
         }
+        default: {
+            __builtin_unreachable();
+        }
     }
     
     float4 world_space_normal = transpose(transform_inverse) * object_space_normal;
@@ -31,7 +34,7 @@ void Shape::intersect(const thread Ray& world_ray, thread Intersections& hits) c
         }
     }
     
-    // Unreachable
+    __builtin_unreachable();
 }
 
 void Shape::local_intersect_sphere(const thread Ray& ray, thread Intersections& hits) const {

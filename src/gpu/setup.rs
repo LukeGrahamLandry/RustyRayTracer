@@ -35,7 +35,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(world: World) -> (AppState, EventLoop<()>) {
         let event_loop = winit::event_loop::EventLoop::new();
-        let size = winit::dpi::LogicalSize::new(800, 600);
+        let size = winit::dpi::LogicalSize::new(world.camera.size().0, world.camera.size().1);
 
         let window = winit::window::WindowBuilder::new()
             .with_inner_size(size)

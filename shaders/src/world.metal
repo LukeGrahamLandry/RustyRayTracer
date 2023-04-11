@@ -48,7 +48,12 @@ bool World::is_shadowed(const thread float4& light_pos, const thread float4& hit
     Intersections hits = intersections();
     intersect(ray, hits);
     // Make sure the hit is not behind the light.
-    return hits.has_hit() && hits.get_hit().t < length(light_direction);
+    if (hits.has_hit()) {
+        float t = hits.get_hit().t;
+        return t*t < length_squared(light_direction);
+    } else {
+        return false;
+    }
 }
 
 Comps World::prepare_comps(const thread Intersection& hit, const thread Ray& ray) const {

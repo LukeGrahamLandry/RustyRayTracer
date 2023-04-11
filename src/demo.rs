@@ -75,7 +75,7 @@ pub fn spheres_world(use_plane: bool) -> World {
         shapes.append(&mut vec![floor, left_wall, right_wall])
     }
 
-    let mut camera = Camera::new(1280 / 2, 720 / 2, PI / 3.0);
+    let mut camera = Camera::new(1280, 720, PI / 3.0);
     camera.set_transform(Mat4::look_at_rh(
         vec3(0.0, 1.5, -5.0),
         vec3(0.0, 1.0, 0.0),

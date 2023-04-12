@@ -1,25 +1,24 @@
 #include "world.h"
 
 
-float3 World::color_at(Ray ray) const {
+float3 World::color_at(const thread Ray& first_ray) const {
     float3 colour = float3(0);
-    float prev_reflectance = 1;
-    Intersections hits = intersections();
-    for (int i=0;i<MAX_REFLECTIONS;i++) {
-        intersect(ray, hits);
+    Intersections hits;
+    RayQueue queue;
+    queue.push(first_ray, 1.0);
+    for (int i=0;i<MAX_REFLECTIONS && !queue.is_empty();i++) {
+        RayInfo ray = queue.pop();
+        intersect(ray.ray, hits);
 
         if (hits.has_hit()) {
-            Comps comps = prepare_comps(hits.get_hit(), ray);
-            colour += shade_hit(comps) * prev_reflectance;
+            Comps comps = prepare_comps(hits.get_hit(), ray.ray, hits);
+            colour += shade_hit(comps) * ray.weight;
 
-            prev_reflectance *= comps.material.reflective;
-            if (prev_reflectance < EPSILON) {
-                break;
+            float reflect_weight = ray.weight * comps.material.reflective;
+            if (reflect_weight > EPSILON) {
+                queue.push(Ray {comps.over_point, comps.reflectv}, reflect_weight);
             }
-            ray = Ray {comps.over_point, comps.reflectv};
             hits.clear();
-        } else {
-            break;
         }
     }
     
@@ -47,7 +46,7 @@ float3 World::shade_hit(const thread Comps& comps) const {
 bool World::is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const {
     float4 light_direction = light_pos - hit_pos;
     Ray ray = {hit_pos, normalize(light_direction)};
-    Intersections hits = intersections();
+    Intersections hits;
     intersect(ray, hits);
     // Make sure the hit is not behind the light.
     if (hits.has_hit()) {
@@ -58,7 +57,7 @@ bool World::is_shadowed(const thread float4& light_pos, const thread float4& hit
     }
 }
 
-Comps World::prepare_comps(const thread Intersection& hit, const thread Ray& ray) const {
+Comps World::prepare_comps(const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const {
     Shape object = shapes[hit.obj];
     Comps comps;
     comps.t = hit.t;
@@ -71,6 +70,38 @@ Comps World::prepare_comps(const thread Intersection& hit, const thread Ray& ray
 
     // Used for is_shadowed checks to prevent shadow acne
     comps.over_point = comps.point + (comps.normalv * EPSILON);
+    comps.under_point = comps.point - (comps.normalv * EPSILON);
     comps.reflectv = reflect(ray.direction, comps.normalv);
+    
+    Intersections containers;
+    for (int i=0;i<xs.count;i++){
+        Intersection check = xs.hits[i];
+        if (hit == check){
+            if (containers.is_empty()) {
+                comps.n1 = 1.0;
+            } else {
+                Shape s = shapes[xs.last().obj];
+                comps.n1 = s.material.refractive_index;
+            }
+        }
+        
+        int index = containers.index_of(check);
+        if (index >= 0){
+            containers.remove(index);
+        } else {
+            containers.add(check.t, check.obj);
+        }
+        
+        if (hit == check){
+            if (containers.is_empty()) {
+                comps.n2 = 1.0;
+            } else {
+                Shape s = shapes[xs.last().obj];
+                comps.n2 = s.material.refractive_index;
+            }
+            break;
+        }
+    }
+    
     return comps;
 }

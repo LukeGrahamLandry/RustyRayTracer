@@ -97,3 +97,10 @@ fn add_three_spheres(world: &mut World){
     left.material.reflective = 0.15;
     world.add_shape(left);
 }
+
+fn glass_sphere() -> Shape {
+    let mut s = Shape::default();
+    s.material.transparency = 1.0;
+    s.material.refractive_index = 1.5;
+    s
+}

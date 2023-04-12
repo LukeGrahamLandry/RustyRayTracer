@@ -13,7 +13,9 @@ impl World {
             && is_frac(shape.material.ambient)
             && is_frac(shape.material.reflective)
             && is_frac(shape.material.specular)
+            && is_frac(shape.material.transparency)
             && is_colour(shape.material.colour)
+            && shape.material.refractive_index >= 0.0
         );
 
         shape.index = self.shapes.len() as u32;
@@ -67,6 +69,8 @@ pub struct Material {
     pub specular: f32,
     pub shininess: f32,
     pub reflective: f32,
+    pub transparency: f32,
+    pub refractive_index: f32
 }
 
 #[repr(C)]
@@ -111,6 +115,8 @@ impl Default for Material {
             specular: 0.9,
             shininess: 200.0,
             reflective: 0.0,
+            transparency: 0.0,
+            refractive_index: 1.0
         }
     }
 }

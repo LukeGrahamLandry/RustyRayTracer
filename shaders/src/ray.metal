@@ -52,3 +52,19 @@ Intersection Intersections::get_hit() const {
     // check has_hit first
     __builtin_unreachable();
 };
+
+
+int Intersections::index_of(const thread Intersection& hit) const {
+    for (int i=0;i<count;i++) {
+        if (hits[i] == hit) return i;
+    }
+    return -1;
+}
+
+
+void Intersections::remove(int index) {
+    for (int i=index;i<(count-1);i++){
+        hits[i] = hits[i+1];
+    }
+    count--;
+}

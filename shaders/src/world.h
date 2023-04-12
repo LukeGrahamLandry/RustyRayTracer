@@ -26,6 +26,9 @@ typedef struct Comps {
     bool inside;
     float4 over_point;
     float4 reflectv;
+    float n1;
+    float n2;
+    float4 under_point;
 } Comps;
 
 typedef struct World {
@@ -33,11 +36,11 @@ typedef struct World {
     const device PointLight* lights;
     constant ShaderInputs& inputs;
     
-    float3 color_at(Ray ray) const;
+    float3 color_at(const thread Ray& ray) const;
     void intersect(const thread Ray& ray, thread Intersections& hits) const;
     float3 shade_hit(const thread Comps& comps) const;
     bool is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const;
-    Comps prepare_comps(const thread Intersection& hit, const thread Ray& ray) const;
+    Comps prepare_comps(const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const;
 } WorldView;
 
 #endif 

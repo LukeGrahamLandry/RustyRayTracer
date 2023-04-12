@@ -29,6 +29,10 @@ typedef struct Camera {
 typedef struct Intersection {
     float t;
     int obj;
+    
+    inline bool operator==(const thread Intersection& rhs) const {
+        return t == rhs.t && obj == rhs.obj;
+    }
 } Intersection;
 
 typedef struct Intersections {
@@ -36,6 +40,9 @@ typedef struct Intersections {
     bool is_hit;
     Intersection hits[MAX_HITS];
     
+    Intersections(){
+        clear();
+    }
     Intersection get_hit() const;
     void add(float t, int shape_index);
     inline bool has_hit() const {
@@ -45,12 +52,50 @@ typedef struct Intersections {
         count = 0;
         is_hit = false;
     }
+    inline bool is_empty() const {
+        return count == 0;
+    }
+    inline const thread Intersection& last() const {
+        return hits[count - 1];
+    }
+    int index_of(const thread Intersection& hit) const;
+    void remove(int i);
 } Intersections;
 
-// TODO: default constructor 
-inline Intersections intersections() {
-    return {0, false, {}};
-}
+typedef struct RayInfo {
+    Ray ray;
+    float weight;
+} RayInfo;
+
+typedef struct RayQueue {
+    RayInfo rays[MAX_RAY_QUEUE];
+    int start;
+    int end;
+    
+    RayQueue(){
+        start = 0;
+        end = 0;
+    }
+    
+    inline RayInfo pop() {
+        int index = start % MAX_RAY_QUEUE;
+        start++;
+        return rays[index];
+    }
+    
+    inline void push(const thread Ray& r, float weight) {
+        int count = end - start;
+        if (count > MAX_RAY_QUEUE) return;
+        int index = end % MAX_RAY_QUEUE;
+        rays[index] = {r, weight};
+        end++;
+    }
+    
+    inline bool is_empty() const {
+        return start == end;
+    }
+} RayQueue;
+
 
 #include "shapes.h"
 

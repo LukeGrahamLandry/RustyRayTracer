@@ -55,6 +55,7 @@ pub struct Camera {
     half_height: f32,
     hsize: f32,
     vsize: f32,
+    pub field_of_view: f32,
 }
 
 #[repr(C)]
@@ -132,27 +133,30 @@ impl Camera {
     }
 
     pub fn new(hsize: usize, vsize: usize, field_of_view: f32) -> Camera {
-        let half_view = (field_of_view / 2.0).tan();
+        let mut camera = Camera::default();
+        camera.field_of_view = field_of_view;
+        camera.set_transform(Mat4::IDENTITY);
+        camera.resize(hsize, vsize);
+        camera
+    }
+
+    pub fn resize(&mut self, hsize: usize, vsize: usize) {
+        let half_view = (self.field_of_view / 2.0).tan();
         let aspect_ratio = (hsize as f32) / (vsize as f32);
-        let half_width = if aspect_ratio >= 1.0 {
+        self.half_width = if aspect_ratio >= 1.0 {
             half_view
         } else {
             half_view * aspect_ratio
         };
-        let half_height = if aspect_ratio >= 1.0 {
+        self.half_height = if aspect_ratio >= 1.0 {
             half_view / aspect_ratio
         } else {
             half_view
         };
 
-        Camera {
-            transform_inverse: Mat4::IDENTITY,
-            half_width,
-            half_height,
-            pixel_size: (half_width * 2.0) / (hsize as f32),
-            hsize: hsize as f32,
-            vsize: vsize as f32,
-        }
+        self.pixel_size = (self.half_width * 2.0) / (hsize as f32);
+        self.hsize = hsize as f32;
+        self.vsize = vsize as f32;
     }
 
     pub fn size(&self) -> (f32, f32) {

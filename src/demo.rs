@@ -9,6 +9,8 @@ pub fn chapter9() -> World {
 
     let mut floor = Shape::default();
     floor.shape = ShapeType::Plane;
+    floor.material.specular = 0.0;
+    floor.material.reflective = 0.5;
     world.add_shape(floor);
 
     world

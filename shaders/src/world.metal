@@ -1,12 +1,13 @@
 #include "world.h"
 
-
-float3 World::color_at(const thread Ray& first_ray) const {
+// Since Metal doesn't allow recursion in fragment shaders, this iteratively processes a queue of rays.
+// When a new ray needs to be spawned for a reflection or refraction, it just gets pushed to the queue.
+float3 World::colour_at(const thread Ray& first_ray) const {
     float3 colour = float3(0);
     Intersections hits;
     RayQueue queue;
     queue.push(first_ray, 1.0);
-    for (int i=0;i<MAX_REFLECTIONS && !queue.is_empty();i++) {
+    for (int i=0;i<MAX_REFLECT_REFRACT && !queue.is_empty();i++) {
         RayInfo ray = queue.pop();
         intersect(ray.ray, hits);
 
@@ -18,6 +19,21 @@ float3 World::color_at(const thread Ray& first_ray) const {
             if (reflect_weight > EPSILON) {
                 queue.push(Ray {comps.over_point, comps.reflectv}, reflect_weight);
             }
+            
+            // https://en.wikipedia.org/wiki/Snell%27s_law
+            float refract_weight = ray.weight * comps.material.transparency;
+            if (refract_weight > EPSILON){
+                float n_ratio = comps.n1 / comps.n2;
+                float cos_i = dot(comps.eyev, comps.normalv);
+                float sin2_t = n_ratio*n_ratio * (1 - cos_i*cos_i);
+                
+                if (sin2_t < 1){  // not total internal reflection
+                    float cos_t = sqrt(1.0 - sin2_t);
+                    float4 direction = comps.normalv * (n_ratio * cos_i - cos_t) - comps.eyev * n_ratio;
+                    queue.push(Ray {comps.under_point, direction}, refract_weight);
+                }
+            }
+            
             hits.clear();
         }
     }
@@ -48,9 +64,9 @@ bool World::is_shadowed(const thread float4& light_pos, const thread float4& hit
     Ray ray = {hit_pos, normalize(light_direction)};
     Intersections hits;
     intersect(ray, hits);
-    // Make sure the hit is not behind the light.
     if (hits.has_hit()) {
         float t = hits.get_hit().t;
+        // Checks that the hit is not behind the light.
         return t*t < length_squared(light_direction);
     } else {
         return false;
@@ -71,8 +87,14 @@ Comps World::prepare_comps(const thread Intersection& hit, const thread Ray& ray
     // Used for is_shadowed checks to prevent shadow acne
     comps.over_point = comps.point + (comps.normalv * EPSILON);
     comps.under_point = comps.point - (comps.normalv * EPSILON);
-    comps.reflectv = reflect(ray.direction, comps.normalv);
     
+    comps.reflectv = reflect(ray.direction, comps.normalv);
+    refraction_path(comps, hit, ray, xs);
+    return comps;
+}
+
+// TODO: really feels like this shouldn't need to use an extra list.
+void World::refraction_path(thread Comps& comps, const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const {
     Intersections containers;
     for (int i=0;i<xs.count;i++){
         Intersection check = xs.hits[i];
@@ -102,6 +124,4 @@ Comps World::prepare_comps(const thread Intersection& hit, const thread Ray& ray
             break;
         }
     }
-    
-    return comps;
 }

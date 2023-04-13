@@ -18,7 +18,7 @@ fragment float4 raytracer_fragment(
 ){
     World world = {shapes, lights, inputs};
     Ray ray = inputs.camera.ray_for_pixel(in.position.x, in.position.y);
-    return float4(world.color_at(ray), 1.0);
+    return float4(world.colour_at(ray), 1.0);
 };
 
 // Big triangle that covers the screen so the fragment shader runs for every pixel.

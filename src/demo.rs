@@ -2,10 +2,42 @@ use std::f32::consts::PI;
 
 use crate::shader_types::{Camera, PointLight, Shape, ShapeType, World};
 
-use glam::{vec3, vec4, Mat4, Vec3A};
+use glam::{vec3, vec4, Mat4, Vec3A, vec3a};
+
+pub fn chapter11() -> World {
+    let mut world = base_world();
+
+    // less colour for less bright cause add
+    let mut big = glass_sphere();
+    big.set_transform(Mat4::from_translation(vec3(-0.5, 1.0, 0.5)));
+    big.material.diffuse = 0.2;
+    big.material.ambient = 0.01;
+    world.add_shape(big);
+
+    let mut small = glass_sphere();
+    small.set_transform(Mat4::from_translation(vec3(-0.5, 1.0, 0.5)) * Mat4::from_scale(vec3(0.5, 0.5, 0.5)));
+    small.material.diffuse = 0.2;
+    small.material.ambient = 0.01;
+    world.add_shape(small);
+
+    let mut back = Shape::default();
+    back.material.colour = vec3a(0.9, 0.1, 0.1);
+    back.set_transform(Mat4::from_translation(vec3(-0.5, 1.0, 1.5)) * Mat4::from_scale(vec3(0.5, 0.5, 0.5)));
+    world.add_shape(back);
+
+    let mut floor = Shape::default();
+    floor.shape = ShapeType::Plane;
+    floor.material.colour.x = 0.8;
+    floor.material.specular = 0.0;
+    floor.material.reflective = 0.5;
+    world.add_shape(floor);
+
+    world
+}
 
 pub fn chapter9() -> World {
     let mut world = base_world();
+    add_three_spheres(&mut world);
 
     let mut floor = Shape::default();
     floor.shape = ShapeType::Plane;
@@ -18,6 +50,7 @@ pub fn chapter9() -> World {
 
 pub fn chapter7() -> World {
     let mut world = base_world();
+    add_three_spheres(&mut world);
 
     let mut floor = Shape::default();
     floor.set_transform(Mat4::from_scale(vec3(10.0, 0.01, 10.0)));
@@ -63,7 +96,6 @@ fn base_world() -> World {
         position: vec4(-10.0, 10.0, -10.0, 1.0),
         intensity: Vec3A::new(1.0, 1.0, 1.0),
     });
-    add_three_spheres(&mut world);
 
     world
 }
@@ -100,7 +132,7 @@ fn add_three_spheres(world: &mut World){
 
 fn glass_sphere() -> Shape {
     let mut s = Shape::default();
-    s.material.transparency = 1.0;
+    s.material.transparency = 0.5;
     s.material.refractive_index = 1.5;
     s
 }

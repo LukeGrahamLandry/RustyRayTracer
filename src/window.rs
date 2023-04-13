@@ -62,23 +62,22 @@ impl AppState {
     }
 
     pub fn run<T: RenderStrategy>(mut self, mut renderer: T, event_loop: EventLoop<()>) {
+        println!("Starting event loop.");
         event_loop.run(move |event, _, control_flow| {
             match event {
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::KeyboardInput { input, .. } => if input.state == ElementState::Pressed {
                         match input.virtual_keycode {
                             Some(VirtualKeyCode::Escape) => *control_flow = ControlFlow::Exit,
-                            Some(VirtualKeyCode::Key1) => {
-                                self.world = chapter7();
-                                self.resize_camera();
-                                renderer.world_changed(&mut self);
-                            },
-                            Some(VirtualKeyCode::Key2) => {
-                                self.world = chapter9();
-                                self.resize_camera();
-                                renderer.world_changed(&mut self);
+                            key => match preset_world(key) {
+                                Some(w) => {
+                                    println!("Switch scene.");
+                                    self.world = w;
+                                    self.resize_camera();
+                                    renderer.world_changed(&mut self);
+                                }
+                                None => {}
                             }
-                            _ => {}
                         }
                     },
                     WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
@@ -104,6 +103,21 @@ impl AppState {
         self.world.camera.resize(size.width as usize, size.height as usize);
         println!("Resolution: {}x{}", size.width, size.height);
         size
+    }
+}
+
+fn preset_world(key: Option<VirtualKeyCode>) -> Option<World> {
+    match key {
+        Some(VirtualKeyCode::Key1) => {
+            Some(chapter7())
+        },
+        Some(VirtualKeyCode::Key2) => {
+            Some(chapter9())
+        },
+        Some(VirtualKeyCode::Key3) => {
+            Some(chapter11())
+        }
+        _ => None,
     }
 }
 

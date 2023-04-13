@@ -36,11 +36,12 @@ typedef struct World {
     const device PointLight* lights;
     constant ShaderInputs& inputs;
     
-    float3 color_at(const thread Ray& ray) const;
+    float3 colour_at(const thread Ray& ray) const;
     void intersect(const thread Ray& ray, thread Intersections& hits) const;
     float3 shade_hit(const thread Comps& comps) const;
     bool is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const;
     Comps prepare_comps(const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const;
+    void refraction_path(thread Comps&, const thread Intersection&, const thread Ray&, const thread Intersections&) const;
 } WorldView;
 
 #endif 

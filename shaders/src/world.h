@@ -36,6 +36,8 @@ typedef struct World {
     const device PointLight* lights;
     constant ShaderInputs& inputs;
     
+    World(const device Shape* s, const device PointLight* l, constant ShaderInputs& i)
+        : shapes(s), lights(l), inputs(i) {};
     float3 colour_at(const thread Ray& ray) const;
     void intersect(const thread Ray& ray, thread Intersections& hits) const;
     float3 shade_hit(const thread Comps& comps) const;

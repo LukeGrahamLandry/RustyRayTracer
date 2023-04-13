@@ -9,8 +9,10 @@ typedef struct Ray {
     float4 origin;
     float4 direction;
     
+    Ray() : Ray(float4(0), float4(0)) {};
+    Ray(float4 o, float4 d) : origin(o), direction(d) {};
     Ray transform(float4x4 mat) const;
-    inline float4 position(float t) const {
+    float4 position(float t) const {
         return origin + (direction * t);
     }
 } Ray;
@@ -30,7 +32,7 @@ typedef struct Intersection {
     float t;
     int obj;
     
-    inline bool operator==(const thread Intersection& rhs) const {
+    bool operator==(const thread Intersection& rhs) const {
         return t == rhs.t && obj == rhs.obj;
     }
 } Intersection;
@@ -45,17 +47,17 @@ typedef struct Intersections {
     }
     Intersection get_hit() const;
     void add(float t, int shape_index);
-    inline bool has_hit() const {
+    bool has_hit() const {
         return is_hit;
     };
-    inline void clear() {
+    void clear() {
         count = 0;
         is_hit = false;
     }
-    inline bool is_empty() const {
+    bool is_empty() const {
         return count == 0;
     }
-    inline const thread Intersection& last() const {
+    const thread Intersection& last() const {
         return hits[count - 1];
     }
     int index_of(const thread Intersection& hit) const;
@@ -65,6 +67,9 @@ typedef struct Intersections {
 typedef struct RayInfo {
     Ray ray;
     float weight;
+    
+    RayInfo(Ray r, float w) : ray(r), weight(w) {};
+    RayInfo() : ray(Ray()), weight(0) {};
 } RayInfo;
 
 typedef struct RayQueue {
@@ -77,21 +82,23 @@ typedef struct RayQueue {
         end = 0;
     }
     
-    inline RayInfo pop() {
+    RayInfo pop() {
         int index = start % MAX_RAY_QUEUE;
         start++;
         return rays[index];
     }
     
-    inline void push(const thread Ray& r, float weight) {
+    void push(Ray r, float weight) {
+        // TODO: bounds checking seems very cringe but also i dont want it to stomp on stuff.
+        //       currently drops later ones instead of earlier ones which seems better but maybe not worth it.
         int count = end - start;
         if (count > MAX_RAY_QUEUE) return;
         int index = end % MAX_RAY_QUEUE;
-        rays[index] = {r, weight};
+        rays[index] = RayInfo(r, weight);
         end++;
     }
     
-    inline bool is_empty() const {
+    bool is_empty() const {
         return start == end;
     }
 } RayQueue;

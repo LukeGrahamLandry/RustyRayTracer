@@ -1,14 +1,8 @@
 #ifndef common_h
 #define common_h
 
-#include <metal_stdlib>
-using namespace metal;
-
-#define Point(x, y, z) float4(x, y, z, 1.0)
-#define Vector(x, y, z) float4(x, y, z, 0.0)
-
 // Used for the size of the static arrays of intersections.
-#define MAX_HITS 100
+#define MAX_HITS 50
 
 // ~log_2(MAX_REFLECT_REFRACT)?
 // Used for avoiding recursion in the colour_at function
@@ -19,5 +13,22 @@ using namespace metal;
 
 // Used for preventing shadow acne.
 #define EPSILON 0.01
+
+#define Point(x, y, z) float4(x, y, z, 1.0)
+#define Vector(x, y, z) float4(x, y, z, 0.0)
+
+// NOT_BUILDING_AS_MSL is set by build.rs when building as c++ for cpu_runner.
+#ifndef NOT_BUILDING_AS_MSL
+#include <metal_stdlib>
+using namespace metal;
+#else
+#include <simd/simd.h>
+using namespace simd;
+#define device
+#define constant
+#define thread
+#define vertex
+#define fragment
+#endif
 
 #endif

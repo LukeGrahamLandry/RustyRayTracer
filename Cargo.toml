@@ -11,3 +11,8 @@ cocoa = "0.24.0"
 glam = "0.22"
 core-graphics-types = "0.1"
 objc = "0.2.7"
+rayon="1.7.0"
+softbuffer = "0.2.0"
+
+[build-dependencies]
+cc = "1.0.79"

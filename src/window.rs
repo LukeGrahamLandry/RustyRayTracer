@@ -4,7 +4,7 @@ use winit::{
     event::{Event, WindowEvent},
     event_loop::ControlFlow,
 };
-use winit::dpi::{LogicalSize, PhysicalSize};
+use winit::dpi::LogicalSize;
 use winit::event::{ElementState, VirtualKeyCode};
 use winit::event_loop::EventLoop;
 use winit::window::Window;
@@ -34,6 +34,7 @@ pub struct AppState {
 /// All the logic for creating a window and handling events that can be shared between gpu and cpu renderers.
 impl AppState {
     pub fn new() -> (AppState, EventLoop<()>) {
+        println!("Use the number keys to switch between included scenes. The window can be resized.");
         let world = chapter7();
         let event_loop = winit::event_loop::EventLoop::new();
         let size = winit::dpi::LogicalSize::new(world.camera.size().0, world.camera.size().1);

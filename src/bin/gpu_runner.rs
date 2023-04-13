@@ -29,6 +29,7 @@ struct GpuState {
 
 impl RenderStrategy for GpuState {
     fn new(app: &AppState) -> GpuState {
+        println!("Shaders are running on the GPU.");
         let device = Device::system_default().expect("No metal device found.");
         let layer = init_layer(&device, app);
         init_view(app, &layer);
@@ -102,7 +103,7 @@ fn load_shaders(device: &Device) -> (Function, Function) {
 
     let library = device.new_library_with_file(library_path).unwrap();
     let vert = library.get_function("full_screen_triangle", None).unwrap();
-    let frag = library.get_function("raytracer_fragment", None).unwrap();
+    let frag = library.get_function("trace_pixel", None).unwrap();
 
     (vert, frag)
 }

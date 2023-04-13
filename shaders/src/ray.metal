@@ -15,14 +15,18 @@ Ray Camera::ray_for_pixel(float x, float y) const constant {
     float4 pixel_world_point = transform_inverse * pixel_object_point;
     float4 camera_world_point = transform_inverse * Point(0, 0, 0);
     float4 ray_direction = normalize(pixel_world_point - camera_world_point);
-    return {camera_world_point, ray_direction};
+    return Ray(camera_world_point, ray_direction);
 };
 
 
 Ray Ray::transform(float4x4 mat) const {
-    return {mat * origin, mat * direction};
+    return Ray(mat * origin, mat * direction);
 }
 
+// TODO: better to just sort once at the end? do CSG then decide
+//       seems like you mostly don't need the whole thing sorted
+//       except for refraction so doing it for shadows too is strange,
+//       should just look for one in the right range without swapping.
 void Intersections::add(float t, int shape_index) {
     Intersection hit = {t, shape_index};
     if (hit.t >= 0) {

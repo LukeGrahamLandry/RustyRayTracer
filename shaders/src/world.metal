@@ -59,6 +59,7 @@ float3 World::shade_hit(const thread Comps& comps) const {
     return colour;
 }
 
+// TODO: just check for a hit in the range without sorting the whole Intersections 
 bool World::is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const {
     float4 light_direction = light_pos - hit_pos;
     Ray ray = {hit_pos, normalize(light_direction)};

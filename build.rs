@@ -4,7 +4,7 @@ use std::process::Command;
 fn main() {
     println!("cargo:rerun-if-changed=shaders/src");
     assert_macos();
-    for_gpu_runner();
+    // for_gpu_runner();
     for_cpu_runner();
 }
 
@@ -34,13 +34,12 @@ fn for_cpu_runner(){
     let paths = paths
         .into_iter()
         .map(|p| { p.unwrap().path() })
-        .filter(|p| !p.ends_with("shaders.metal"));
+        .filter(|p| !p.ends_with("shaders.metal") && p.extension().unwrap() != "h");
 
     cc::Build::new()
         .define("NOT_BUILDING_AS_MSL", None)
         .cpp(true)
-        .flag("-std=c++11")
+        .flag("-std=c++14")
         .files(paths)
-        .archiver()
         .compile("shaders");
 }

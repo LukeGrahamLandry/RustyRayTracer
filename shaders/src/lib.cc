@@ -1,4 +1,3 @@
-
 #ifdef NOT_BUILDING_AS_MSL
 
 #include "common.h"
@@ -8,6 +7,7 @@
 #include "shapes.h"
 
 extern "C" {
+    // This gets called from cpu_runner.
     float4 trace_pixel(float4 position, ShaderInputs& inputs, Shape* shapes, PointLight* lights){
         World world = World(shapes, lights, inputs);
         Ray ray = inputs.camera.ray_for_pixel(position.x, position.y);

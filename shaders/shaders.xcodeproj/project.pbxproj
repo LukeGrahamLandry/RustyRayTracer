@@ -15,7 +15,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A34F3CDD29E7BD3500F3EBE1 /* cpp_entry.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cpp_entry.cpp; sourceTree = "<group>"; };
 		A394FFE029E3D08400D58DAF /* shaders.metallib */ = {isa = PBXFileReference; explicitFileType = "archive.metal-library"; includeInIndex = 0; path = shaders.metallib; sourceTree = BUILT_PRODUCTS_DIR; };
 		A394FFE329E3D08400D58DAF /* shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = shaders.metal; sourceTree = "<group>"; };
 		A394FFEC29E48C0D00D58DAF /* material.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = material.metal; sourceTree = "<group>"; };
@@ -59,7 +58,6 @@
 				A394FFE329E3D08400D58DAF /* shaders.metal */,
 				A394FFF129E4AA9B00D58DAF /* shapes.metal */,
 				A394FFEF29E4A78F00D58DAF /* world.metal */,
-				A34F3CDD29E7BD3500F3EBE1 /* cpp_entry.cpp */,
 			);
 			path = src;
 			sourceTree = "<group>";

@@ -16,16 +16,14 @@ struct CpuState {
 
 impl RenderStrategy for CpuState {
     fn new(app: &AppState) -> Self {
+        println!("Shaders will (slowly) run on the CPU.");
         CpuState {
             graphics_context: unsafe { GraphicsContext::new(&app.window, &app.window) }.unwrap()
         }
     }
 
     fn render(&mut self, app: &AppState) {
-        let (width, height) = {
-            let size = app.window.inner_size();
-            (size.width, size.height)
-        };
+        let (width, height) = (app.window.inner_size().width, app.window.inner_size().height);
 
         let inputs = &app.shader_inputs();
         let shapes = app.world.get_shapes();

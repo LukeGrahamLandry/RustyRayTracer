@@ -54,7 +54,7 @@ Intersection Intersections::get_hit() const {
     }
     
     // check has_hit first
-    __builtin_unreachable();
+    unreachable();
 };
 
 

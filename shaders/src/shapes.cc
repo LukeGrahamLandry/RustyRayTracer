@@ -14,7 +14,7 @@ float4 Shape::normal_at(float4 world_pos) const {
             break;
         }
         default: {
-            __builtin_unreachable();
+            unreachable();
         }
     }
     
@@ -25,6 +25,7 @@ float4 Shape::normal_at(float4 world_pos) const {
 
 void Shape::intersect(const thread Ray& world_ray, thread Intersections& hits) const {
     Ray object_space_ray = world_ray.transform(transform_inverse);
+    // Look at me. Look at me. I am the VTable now.
     switch (shape) {
         case Sphere: {
             return local_intersect_sphere(object_space_ray, hits);
@@ -33,8 +34,8 @@ void Shape::intersect(const thread Ray& world_ray, thread Intersections& hits) c
             return local_intersect_plane(object_space_ray, hits);
         }
     }
-    
-    __builtin_unreachable();
+
+    unreachable();
 }
 
 void Shape::local_intersect_sphere(const thread Ray& ray, thread Intersections& hits) const {

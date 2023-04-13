@@ -1,15 +1,16 @@
+#ifndef NOT_BUILDING_AS_MSL
+
 #include "common.h"
 #include "material.h"
 #include "world.h"
 #include "ray.h"
 #include "shapes.h"
 
-#ifndef NOT_BUILDING_AS_MSL
-
 struct VertOut {
     float4 position [[position]];
 };
 
+// This gets called from gpu_runner.
 fragment float4 trace_pixel(
     VertOut in [[stage_in]],
     constant ShaderInputs& inputs [[buffer(0)]],

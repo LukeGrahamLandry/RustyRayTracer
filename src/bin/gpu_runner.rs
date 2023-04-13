@@ -5,14 +5,14 @@ use std::mem;
 use std::ffi::c_void;
 
 use metal::*;
-use winit::dpi::{LogicalSize, PhysicalSize};
+use winit::dpi::LogicalSize;
 use winit::platform::macos::WindowExtMacOS;
 use core_graphics_types::geometry::CGSize;
 use objc::{rc::autoreleasepool, runtime::YES};
 use cocoa::{appkit::NSView, base::id as cocoa_id};
 
 use raytracer::window::{RenderStrategy, AppState};
-use raytracer::shader_types::{PointLight, ShaderInputs, Shape};
+use raytracer::shader_types::ShaderInputs;
 
 pub fn main() {
     GpuState::run();
@@ -29,7 +29,7 @@ struct GpuState {
 
 impl RenderStrategy for GpuState {
     fn new(app: &AppState) -> GpuState {
-        println!("Shaders are running on the GPU.");
+        println!("Shaders will run on the GPU.");
         let device = Device::system_default().expect("No metal device found.");
         let layer = init_layer(&device, app);
         init_view(app, &layer);

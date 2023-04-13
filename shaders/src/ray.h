@@ -17,6 +17,7 @@ typedef struct Ray {
     }
 } Ray;
 
+
 typedef struct Camera {
     float4x4 transform_inverse;
     float pixel_size;

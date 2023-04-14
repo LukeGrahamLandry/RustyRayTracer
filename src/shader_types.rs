@@ -57,7 +57,7 @@ pub struct Camera {
     half_height: f32,
     hsize: f32,
     vsize: f32,
-    pub field_of_view: f32,
+    field_of_view: f32,
 }
 
 #[repr(C)]

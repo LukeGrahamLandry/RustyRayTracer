@@ -43,7 +43,7 @@ typedef struct World {
     float3 shade_hit(const thread Comps& comps) const;
     bool is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const;
     Comps prepare_comps(const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const;
-    void refraction_path(thread Comps&, const thread Intersection&, const thread Ray&, const thread Intersections&) const;
+    void refraction_path(thread Comps&, const thread Intersection&, const thread Intersections&) const;
 } WorldView;
 
 #endif 

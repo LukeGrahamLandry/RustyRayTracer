@@ -13,9 +13,6 @@ float4 Shape::normal_at(float4 world_pos) const {
             object_space_normal = Vector(0.0, 1.0, 0.0);
             break;
         }
-        default: {
-            unreachable();
-        }
     }
     
     float4 world_space_normal = transpose(transform_inverse) * object_space_normal;

@@ -3,7 +3,7 @@
 // Since Metal doesn't allow recursion in fragment shaders, this iteratively processes a queue of rays.
 // When a new ray needs to be spawned for a reflection or refraction, it just gets pushed to the queue.
 float3 World::colour_at(const thread Ray& first_ray) const {
-    float3 colour = float3(0);
+    float3 colour = BLACK();
     Intersections hits;
     RayQueue queue;
     queue.push(first_ray, 1.0);
@@ -28,7 +28,7 @@ float3 World::colour_at(const thread Ray& first_ray) const {
                 float sin2_t = n_ratio*n_ratio * (1 - cos_i*cos_i);
                 
                 if (sin2_t < 1){  // not total internal reflection
-                    float cos_t = sqrt(1.0 - sin2_t);
+                    float cos_t = sqrt(1 - sin2_t);
                     float4 direction = comps.normalv * (n_ratio * cos_i - cos_t) - comps.eyev * n_ratio;
                     queue.push(Ray {comps.under_point, direction}, refract_weight);
                 }
@@ -49,7 +49,7 @@ void World::intersect(const thread Ray& ray, thread Intersections& hits) const {
 }
 
 float3 World::shade_hit(const thread Comps& comps) const {
-    float3 colour = float3(0);
+    float3 colour = BLACK();
     for (uint32_t i=0;i<inputs.light_count;i++){
         PointLight light = lights[i];
         bool shadowed = is_shadowed(light.position, comps.over_point);
@@ -90,12 +90,12 @@ Comps World::prepare_comps(const thread Intersection& hit, const thread Ray& ray
     comps.under_point = comps.point - (comps.normalv * EPSILON);
     
     comps.reflectv = reflect(ray.direction, comps.normalv);
-    refraction_path(comps, hit, ray, xs);
+    refraction_path(comps, hit, xs);
     return comps;
 }
 
 // TODO: really feels like this shouldn't need to use an extra list.
-void World::refraction_path(thread Comps& comps, const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const {
+void World::refraction_path(thread Comps& comps, const thread Intersection& hit, const thread Intersections& xs) const {
     Intersections containers;
     for (int i=0;i<xs.count;i++){
         Intersection check = xs.hits[i];

@@ -1,4 +1,37 @@
-### build shaders as c++ with cc-rs in buildscript
+> Trying to take notes on bugs I encounter, so I know what to do if I make the same mistake in other projects.
+
+### trying to build MSL with .cc files
+
+Can change the file type in Xcode dropdown separately from file extension to get msl autocomplete in the editor. 
+Build script gave `error: Multiple commands produce '[...]/Release/shaders.metallib'`.
+Fixed by making sure all files were set to Metal Shader Source instead of some that and some c.
+
+Now its giving `fatal error: 'metal_stdlib' file not found` so it's not in fact compiling it as metal? 
+Tried setting the header files to MSL as well but didn't work. 
+It really just wants them to have the .metal extension. 
+
+I can have the build script change all the file extensions from .cc to .metal before building as MSL 
+and then back before building as c++. And then CLion can index well. This relies on the Xcode project 
+referencing the filenames as .metal, so you can never use xcode as an editor now because it won't find the files. 
+
+But now cargo reruns the build script everytime because that name swapping counts as a change to the directory. 
+Fixed by printing `cargo:rerun-if-changed=` for each file instead of the whole directory. 
+
+### cpu_runner renders wrong
+
+Then the cpu runner had one side all green and one all yellow.
+Now I can look in the debugger to see where the alignment problem is.
+Camera was missing a field but that didn't fix it, I guess the alignment is bigger than a float, so it skips forward.
+First two shapes match on both sides, and so does the light. But the returned vector is wrong.
+(0.31, 0.28, 0.28, 1) in the shader comes back to rust as (0.31, 1, 1, 0.31).
+But since the data passed in got there, surely they have the same repr.
+Using an output pointer argument instead of returning makes the number go through correctly.
+Interestingly that's what rust-gpu was doing too, maybe there's some deeper weirdness in calling conventions?
+
+It's still two solid squares of colour, but now they're the same colours as the back corner of the scene so 
+I must just have the scale wrong somehow. 
+
+### build MSL shaders as c++ with cc-rs in buildscript
 
 Using macros to replace address qualifiers and make it valid c++ but keeping .metal as the file extension, 
 it says `ld: in [...]/libraytracer-a92a5def6bdcf84f.rlib(material.o), archive member 'material.o' with length 9459416 is not mach-o or llvm bitcode file '[...]/libraytracer-a92a5def6bdcf84f.rlib' for architecture arm64`

@@ -12,13 +12,15 @@ fn main() {
 
 struct CpuState {
     graphics_context: GraphicsContext,
+    screen_buffer: Vec<u32>
 }
 
 impl RenderStrategy for CpuState {
     fn new(app: &AppState) -> Self {
         println!("Shaders will (slowly) run on the CPU.");
         CpuState {
-            graphics_context: unsafe { GraphicsContext::new(&app.window, &app.window) }.unwrap()
+            graphics_context: unsafe { GraphicsContext::new(&app.window, &app.window) }.unwrap(),
+            screen_buffer: vec![]
         }
     }
 
@@ -29,24 +31,26 @@ impl RenderStrategy for CpuState {
         let shapes = app.world.get_shapes();
         let lights = app.world.get_lights();
 
-        let buffer = (0..(width * height))
+        (0..(width * height))
             .into_par_iter()
             .map(|i| {
                 let x = i % width;
                 let y = i / width;
 
-                let colour = unsafe {trace_pixel(
+                let mut colour = Vec4::ZERO;
+                unsafe {trace_pixel(
                     vec4(x as f32, y as f32, 0.0, 0.0),
-                    inputs as *const ShaderInputs,
+                    inputs,
                     shapes.as_ptr(),
-                    lights.as_ptr()
+                    lights.as_ptr(),
+                    &mut colour
                 )};
 
                 to_packed_colour(colour)
             })
-            .collect::<Vec<_>>();
+            .collect_into_vec(&mut self.screen_buffer);
 
-        self.graphics_context.set_buffer(&buffer, width as u16, height as u16);
+        self.graphics_context.set_buffer(&self.screen_buffer, width as u16, height as u16);
     }
 
     fn resized(&mut self, _size: LogicalSize<u32>) {
@@ -68,5 +72,5 @@ fn clamp_colour(f: f32) -> u32 {
 }
 
 extern {
-    fn trace_pixel(position: Vec4, inputs: *const ShaderInputs, shapes: *const Shape, lights: *const PointLight) -> Vec4;
+    fn trace_pixel(position: Vec4, inputs: *const ShaderInputs, shapes: *const Shape, lights: *const PointLight, out: *mut Vec4);
 }

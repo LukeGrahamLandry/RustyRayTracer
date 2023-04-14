@@ -25,13 +25,14 @@ typedef struct Camera {
     float half_height;
     float hsize;
     float vsize;
+    float field_of_view;
     
     Ray ray_for_pixel(float x, float y) const constant;
 } Camera;
 
 typedef struct Intersection {
     float t;
-    int obj;
+    uint32_t obj;
     
     bool operator==(const thread Intersection& rhs) const {
         return t == rhs.t && obj == rhs.obj;
@@ -47,7 +48,7 @@ typedef struct Intersections {
         clear();
     }
     Intersection get_hit() const;
-    void add(float t, int shape_index);
+    void add(float t, uint32_t shape_index);
     bool has_hit() const {
         return is_hit;
     };

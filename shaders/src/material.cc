@@ -1,6 +1,5 @@
 #include "material.h"
 
-
 // https://en.wikipedia.org/wiki/Phong_reflection_model
 float3 Material::lighting(PointLight light, float4 position, float4 eye_vector, float4 normal_vector, bool in_shadow) const {
     float3 base_colour = colour * light.intensity;
@@ -11,8 +10,8 @@ float3 Material::lighting(PointLight light, float4 position, float4 eye_vector, 
     float4 light_direction = normalize(light.position - position);
     float cos_light_to_normal = dot(light_direction, normal_vector);  // Since both are normalized
 
-    float3 diffuse_colour = float3(0);
-    float3 specular_colour = float3(0);
+    float3 diffuse_colour = BLACK();
+    float3 specular_colour = BLACK();
     if (cos_light_to_normal >= 0){
         diffuse_colour = base_colour * diffuse * cos_light_to_normal;
 

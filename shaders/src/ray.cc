@@ -5,8 +5,8 @@ Ray Camera::ray_for_pixel(float x, float y) const constant {
     // Adjusted from canvas space to world space units.
     // Since the camera is at (0, 0), translate. This flips it so high y becomes negative.
     // But canvas units are kinda flipped too, so it cancels out? And canvas looks at -x so x flip works too.
-    float object_x = half_width - (((x + 0.5)) * pixel_size);
-    float object_y = half_height - (((y + 0.5)) * pixel_size);
+    float object_x = half_width - (((x + 0.5f)) * pixel_size);
+    float object_y = half_height - (((y + 0.5f)) * pixel_size);
 
     // Position of the pixel in the camera's object space.
     float4 pixel_object_point = Point(object_x, object_y, -1);
@@ -27,7 +27,7 @@ Ray Ray::transform(float4x4 mat) const {
 //       seems like you mostly don't need the whole thing sorted
 //       except for refraction so doing it for shadows too is strange,
 //       should just look for one in the right range without swapping.
-void Intersections::add(float t, int shape_index) {
+void Intersections::add(float t, uint32_t shape_index) {
     Intersection hit = {t, shape_index};
     if (hit.t >= 0) {
         is_hit = true;

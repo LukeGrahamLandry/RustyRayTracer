@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 include_directories(src)
 
-add_executable(tests
+add_executable(unused
         tests/main.cc
         src/common.h
         src/material.cc
@@ -24,4 +24,5 @@ add_executable(tests
         src/shapes.cc
         src/shapes.h
         src/world.cc
-        src/world.h)
+        src/world.h
+        tests/intersections.cc)

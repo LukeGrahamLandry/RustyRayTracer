@@ -1,0 +1,45 @@
+# Rusty Ray Tracer
+
+This ray tracer is based on [The Ray Tracer Challenge by Jamis Buck](http://raytracerchallenge.com). It's 
+implemented using Metal, Apple's graphics API, so it only supports macOS.
+
+## Architecture 
+
+The actual ray tracing logic is written in MSL and runs in a fragment shader. MSL is a very close variant of 
+c++. The only differences are no standard library, no dynamic memory allocation, limited recursion, and every 
+pointer or reference needs an explicit address space qualifier. Since it's mostly a subset of c++, it can be 
+compiled as normal code that runs on the CPU as well. The only changes needed to make it valid c++ is defining the 
+address space keywords as macros that expand to an empty string and using linear algebra types from `simd` instead of 
+`metal_stdlib`. This allows exactly the same logic to run with the performance of shaders in production but debugged 
+with any tools that work on c++. All the application logic that doesn't need to run for every pixel is written 
+in rust and used when running on either the cpu or gpu. This makes it easy to check if bugs are caused by logic 
+issues or mistakes in passing information to the GPU. CLion can set breakpoints in the c++ functions and inspect the 
+entire call stack, back up into the rust code. 
+
+This is a fairly naive port of the algorithm to a shader. It's probably not well optimised for the kinds of 
+parallelism that GPUs are good at. So don't see this as any sort of Metal performance benchmark. It's still an 
+order of magnitude faster running on the gpu than the cpu, so I'm satisfied for now. It also doesn't use any 
+of Metal's fancy ray tracing acceleration structure stuff because it seems more interesting to do things myself. 
+
+## Features
+
+**From the book**
+
+- Planes, Spheres.
+- Lighting, shadows, reflection, refraction.
+
+**Additions**
+
+- Moving camera. 
+
+### Controls
+
+WASD to move (space and LShift to go up and down). 
+Number keys to switch between preset scenes. 
+The window can be resized as normal. 
+
+## Building
+
+Install rust and the XCode Command Line Tools. Then just `cargo run` as usual. 
+By default, it uses the gpu_runner. You can also `cargo run --release --bin cpu_runner` 
+but it will be much slower (and complete trash when compiled in debug mode). 

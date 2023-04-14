@@ -4,6 +4,20 @@ use crate::shader_types::{Camera, PointLight, Shape, ShapeType, World};
 
 use glam::{vec3, vec4, Mat4, Vec3A, vec3a};
 
+pub fn chapter6() -> World {
+    let mut world = base_world();
+    world.camera.set_transform(Mat4::look_at_rh(
+        vec3(0.0, 1.5, -5.0),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+    ));
+    let mut sphere = Shape::default();
+    sphere.material.colour = vec3a(1.0, 0.2, 1.0);
+    world.add_shape(sphere);
+
+    world
+}
+
 pub fn chapter11() -> World {
     let mut world = base_world();
 

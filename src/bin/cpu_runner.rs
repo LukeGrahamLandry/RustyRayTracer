@@ -27,7 +27,6 @@ impl RenderStrategy for CpuState {
     fn render(&mut self, app: &AppState) {
         // TODO: this will be slower depending on scale factor cause its doing extra work instead of downscaling.
         let (width, height) = (app.window.inner_size().width, app.window.inner_size().height);
-
         let inputs = &app.shader_inputs();
         let shapes = app.world.get_shapes();
         let lights = app.world.get_lights();

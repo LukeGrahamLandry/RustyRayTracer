@@ -2,7 +2,7 @@
 #define common_h
 
 // Used for the size of the static arrays of intersections.
-#define MAX_HITS 50
+#define MAX_HITS 100
 
 // ~log_2(MAX_REFLECT_REFRACT)? or maybe MAX_REFLECT_REFRACT/2
 // Used for avoiding recursion in the colour_at function

@@ -15,6 +15,9 @@ pub struct CameraController {
     rotation: Vec2
 }
 
+const MOVE_SPEED: f32 = 150.0;
+const ROT_SPEED: f32 = 0.05;
+
 impl CameraController {
     pub fn keyboard_event(&mut self, event: KeyboardInput) {
         match event.virtual_keycode {
@@ -46,21 +49,20 @@ impl CameraController {
     }
 
     pub fn update(&mut self, camera: &mut Camera, dt: f32){
-        let MOVE_SPEED = 150.0;
-        let ROT_SPEED = 0.05;
         let last_matrix = camera.get_transform();
         let (scale, rotation, mut translation) = last_matrix.to_scale_rotation_translation();
-        let un_translate = Mat4::from_translation(translation).inverse();
-        let (_, rotation, _) = (un_translate * last_matrix).to_scale_rotation_translation();
+        // let un_translate = Mat4::from_translation(translation).inverse();
+        // let (_, mut rotation, _) = (un_translate * last_matrix).to_scale_rotation_translation();
         translation += self.direction() * dt * MOVE_SPEED;
         // let rot = Quat::from_rotation_y(self.rotation.x * ROT_SPEED) * Quat::from_rotation_x(self.rotation.y * ROT_SPEED);
         // rotation *= rot;
-        let (mut sideways, mut up, nothing) = rotation.to_euler(EulerRot::YXZ);
-        sideways += self.rotation.x * ROT_SPEED;
-        // up += self.rotation.y * ROT_SPEED;
-        // up = up.clamp(0.0, PI);
-        let rot = Quat::from_euler(EulerRot::YXZ, sideways, up, nothing);
-        camera.set_transform(Mat4::from_translation(translation) * Mat4::from_quat(rot));
+        // let (mut sideways, mut up, nothing) = rotation.to_euler(EulerRot::YXZ);
+        // sideways += self.rotation.x * ROT_SPEED;
+        // // up += self.rotation.y * ROT_SPEED;
+        // // up = up.clamp(0.0, PI);
+        // let rot = Quat::from_euler(EulerRot::YXZ, sideways, up, nothing);
+        // * Mat4::from_quat(rotation)
+        camera.set_transform(Mat4::from_scale_rotation_translation(scale, rotation, translation));
         self.rotation = Vec2::ZERO;
     }
 

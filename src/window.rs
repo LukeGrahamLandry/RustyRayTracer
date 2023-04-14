@@ -37,7 +37,7 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> (AppState, EventLoop<()>) {
         println!("Use the number keys to switch between included scenes. The window can be resized.");
-        let world = chapter7();
+        let world = chapter6();
         let event_loop = winit::event_loop::EventLoop::new();
         let size = winit::dpi::LogicalSize::new(world.camera.size().0, world.camera.size().1);
 
@@ -133,6 +133,9 @@ fn preset_world(key: Option<VirtualKeyCode>) -> Option<World> {
         },
         Some(VirtualKeyCode::Key3) => {
             Some(chapter11())
+        },
+        Some(VirtualKeyCode::Key4) => {
+            Some(chapter6())
         }
         _ => None,
     }

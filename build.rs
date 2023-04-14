@@ -1,4 +1,4 @@
-use std::fs;
+use std::{env, fs};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -9,10 +9,21 @@ const SHADERS_SRC: &str = "shaders/src";
 fn main() {
     assert_targeting_macos();
     cargo_watch_changes();
+    gen_test_bindings();
     change_file_extensions("cc", "metal");
     build_as_msl();
     change_file_extensions("metal", "cc");
     build_as_cpp();
+}
+
+fn gen_test_bindings() {
+    let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+
+    cbindgen::Builder::new()
+        .with_crate(crate_dir)
+        .generate()
+        .unwrap()
+        .write_to_file("shaders/tests/generated.h");
 }
 
 /// Compiles the shaders xcode project into a .metallib file.
@@ -38,13 +49,22 @@ fn build_as_cpp(){
         .cpp(true)
         .flag("-std=c++14")
         .files(cc_src_files())
+        .files(cc_test_files())
         .compile("shaders");
 }
 
 fn cargo_watch_changes(){
+    println!("cargo:rerun-if-changed=src");
     fs::read_dir(SHADERS_SRC)
         .unwrap()
         .map(|p| { p.unwrap().path() })
+        .for_each(|p| {
+            println!("cargo:rerun-if-changed={}", p.to_str().unwrap());
+        });
+    fs::read_dir("shaders/tests")
+        .unwrap()
+        .map(|p| { p.unwrap().path() })
+        .filter(|p| !p.ends_with("generated.h"))
         .for_each(|p| {
             println!("cargo:rerun-if-changed={}", p.to_str().unwrap());
         });
@@ -52,6 +72,14 @@ fn cargo_watch_changes(){
 
 fn cc_src_files() -> impl Iterator<Item=PathBuf> {
     fs::read_dir(SHADERS_SRC)
+        .unwrap()
+        .into_iter()
+        .map(|p| { p.unwrap().path() })
+        .filter(|p| p.extension().unwrap() != "h")
+}
+
+fn cc_test_files() -> impl Iterator<Item=PathBuf> {
+    fs::read_dir("shaders/tests")
         .unwrap()
         .into_iter()
         .map(|p| { p.unwrap().path() })

@@ -150,7 +150,8 @@ impl Camera {
         camera
     }
 
-    pub fn resize(&mut self, hsize: usize, vsize: usize) {
+    #[no_mangle]
+    pub extern fn resize(&mut self, hsize: usize, vsize: usize) {
         let half_view = (self.field_of_view / 2.0).tan();
         let aspect_ratio = (hsize as f32) / (vsize as f32);
         self.half_width = if aspect_ratio >= 1.0 {
@@ -171,5 +172,17 @@ impl Camera {
 
     pub fn size(&self) -> (f32, f32) {
         (self.hsize, self.vsize)
+    }
+}
+
+#[cfg(test)]
+extern {
+    fn run_tests() -> i32;
+}
+
+#[test]
+fn cc_tests(){
+    unsafe {
+        run_tests();
     }
 }

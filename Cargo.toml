@@ -16,3 +16,4 @@ softbuffer = "0.2.0"
 
 [build-dependencies]
 cc = "1.0.79"
+cbindgen = "0.24.3"

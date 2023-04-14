@@ -18,14 +18,7 @@
 #define BLACK() float3(0)
 
 // NOT_BUILDING_AS_MSL is set by build.rs when building as c++ for cpu_runner.
-#ifndef NOT_BUILDING_AS_MSL
-
-#include <metal_stdlib>
-using namespace metal;
-#define Point(x, y, z) float4(x, y, z, 1.0)
-#define Vector(x, y, z) float4(x, y, z, 0.0)
-
-#else
+#ifdef NOT_BUILDING_AS_MSL
 
 #include <simd/simd.h>
 using namespace simd;
@@ -37,6 +30,13 @@ using namespace simd;
 #define device
 #define constant
 #define thread
+
+#else
+
+#include <metal_stdlib>
+using namespace metal;
+#define Point(x, y, z) float4(x, y, z, 1.0)
+#define Vector(x, y, z) float4(x, y, z, 0.0)
 
 #endif
 #endif

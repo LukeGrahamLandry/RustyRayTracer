@@ -1,8 +1,8 @@
-############################################################################
-# This isn't actually used for anything... but mother cares not for Xcode. #
-# I just want CLion to index stuff so I can click around while debugging.  #
-# See ../build.rs for the actual build script.                             #
-############################################################################
+###########################################################################################
+# This isn't actually used for building the main thing... but mother cares not for Xcode. #
+# I just want CLion to index stuff so I can click around while debugging.                 #
+# See ../build.rs for the actual build script.                                            #
+###########################################################################################
 
 add_compile_definitions(NOT_BUILDING_AS_MSL)
 
@@ -13,10 +13,11 @@ set(CMAKE_CXX_STANDARD 14)
 
 include_directories(src)
 
-add_executable(unused_cpu_shaders
+add_executable(tests
+        tests/main.cc
         src/common.h
-        src/lib.cc
         src/material.cc
+        src/shaders.cc
         src/material.h
         src/ray.cc
         src/ray.h

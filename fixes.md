@@ -28,8 +28,10 @@ But since the data passed in got there, surely they have the same repr.
 Using an output pointer argument instead of returning makes the number go through correctly.
 Interestingly that's what rust-gpu was doing too, maybe there's some deeper weirdness in calling conventions?
 
-It's still two solid squares of colour, but now they're the same colours as the back corner of the scene so 
-I must just have the scale wrong somehow. 
+It's still two solid squares of colour, but now they're the same colours as the back corner of the scene.  
+Maybe I just have the camera wrong somehow? Looks similar to only having the back walls, 
+also shifted over but that was fixed by that was fixed by dividing by the scale factor since it's 
+using physical instead of logical pixels. 
 
 ### build MSL shaders as c++ with cc-rs in buildscript
 

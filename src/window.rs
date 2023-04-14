@@ -5,9 +5,10 @@ use winit::{
     event_loop::ControlFlow,
 };
 use winit::dpi::LogicalSize;
-use winit::event::{ElementState, VirtualKeyCode};
+use winit::event::{DeviceEvent, ElementState, VirtualKeyCode};
 use winit::event_loop::EventLoop;
 use winit::window::Window;
+use crate::controller::CameraController;
 use crate::demo::*;
 use crate::shader_types::{ShaderInputs, World};
 
@@ -29,6 +30,7 @@ pub struct AppState {
     pub world: World,
     timer: FrameTimer,
     start: Instant,
+    controller: CameraController
 }
 
 /// All the logic for creating a window and handling events that can be shared between gpu and cpu renderers.
@@ -49,7 +51,8 @@ impl AppState {
             window,
             world,
             timer: FrameTimer::new(),
-            start: Instant::now()
+            start: Instant::now(),
+            controller: CameraController::default()
         }, event_loop)
     }
 
@@ -65,19 +68,23 @@ impl AppState {
     pub fn run<T: RenderStrategy>(mut self, mut renderer: T, event_loop: EventLoop<()>) {
         println!("Starting event loop.");
         event_loop.run(move |event, _, control_flow| {
+            *control_flow = ControlFlow::Poll;
             match event {
                 Event::WindowEvent { event, .. } => match event {
-                    WindowEvent::KeyboardInput { input, .. } => if input.state == ElementState::Pressed {
-                        match input.virtual_keycode {
-                            Some(VirtualKeyCode::Escape) => *control_flow = ControlFlow::Exit,
-                            key => match preset_world(key) {
-                                Some(w) => {
-                                    println!("Switch scene.");
-                                    self.world = w;
-                                    self.resize_camera();
-                                    renderer.world_changed(&mut self);
+                    WindowEvent::KeyboardInput { input, .. } => {
+                        self.controller.keyboard_event(input);
+                        if input.state == ElementState::Pressed {
+                            match input.virtual_keycode {
+                                Some(VirtualKeyCode::Escape) => *control_flow = ControlFlow::Exit,
+                                key => match preset_world(key) {
+                                    Some(w) => {
+                                        println!("Switch scene.");
+                                        self.world = w;
+                                        self.resize_camera();
+                                        renderer.world_changed(&mut self);
+                                    }
+                                    None => {}
                                 }
-                                None => {}
                             }
                         }
                     },
@@ -87,10 +94,19 @@ impl AppState {
                     }
                     _ => (),
                 },
+                Event::DeviceEvent { event, ..} => {
+                    match event {
+                        DeviceEvent::MouseMotion {delta, ..} => {
+                            self.controller.mouse_moved(delta);
+                        }
+                        _ => {}
+                    }
+                },
                 Event::MainEventsCleared => {
                     self.window.request_redraw();
                 }
                 Event::RedrawRequested(_) => {
+                    self.controller.update(&mut self.world.camera, self.timer.last.elapsed().as_secs_f32());
                     renderer.render(&mut self);
                     self.timer.update();
                 }

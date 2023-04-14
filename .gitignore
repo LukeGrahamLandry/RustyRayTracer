@@ -7,3 +7,4 @@
 *.xcworkspace
 shaders/build/**
 cmake-build-debug
+*.metallib

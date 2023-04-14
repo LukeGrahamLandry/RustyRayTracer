@@ -138,6 +138,10 @@ impl Camera {
         self.transform_inverse = mat.inverse();
     }
 
+    pub fn get_transform(&self) -> Mat4 {
+        self.transform_inverse.inverse()
+    }
+
     pub fn new(hsize: usize, vsize: usize, field_of_view: f32) -> Camera {
         let mut camera = Camera::default();
         camera.field_of_view = field_of_view;

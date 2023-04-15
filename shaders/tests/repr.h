@@ -1,6 +1,6 @@
 #include "tests_common.h"
 
-TEST(shader_types_struct_repr_matches)
+void shader_types_struct_repr_matches(){
 #define ASSERT_REPR(i, name) \
     start_test("Rust and C++ have same repr for type " #name); \
     assert_eq(rust_struct_sizes[i], sizeof(name)); \

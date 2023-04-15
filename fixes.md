@@ -1,5 +1,12 @@
 > Trying to take notes on bugs I encounter, so I know what to do if I make the same mistake in other projects.
 
+## calling rust functions from c tests
+
+Using a WorldView as an output parameter, the values in the arrays are all wrong with a lot of zeros. 
+The ShaderInputs passed by value work tho. The array pointers are the same but data is garbage. 
+Because backing world is created on the stack in the default_world function, I can't have pointers to it after it drops. 
+Putting the world in a box and returning that pointer as well works. 
+
 ### trying to build MSL with .cc files
 
 Can change the file type in Xcode dropdown separately from file extension to get msl autocomplete in the editor. 

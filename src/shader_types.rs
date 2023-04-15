@@ -37,12 +37,12 @@ impl World {
 
     pub fn view(&self) -> WorldView {
         WorldView {
-            shapes: self.get_shapes().as_ptr(),
-            lights: self.get_lights().as_ptr(),
+            shapes: self.shapes.as_ptr(),
+            lights: self.lights.as_ptr(),
             inputs: ShaderInputs {
                 camera: self.camera,
-                shape_count: self.get_shapes().len() as u32,
-                light_count: self.get_lights().len() as u32
+                shape_count: self.shapes.len() as u32,
+                light_count: self.lights.len() as u32
             }
         }
     }

@@ -31,17 +31,26 @@ typedef struct Comps {
 } Comps;
 
 typedef struct World {
-    const device Shape* shapes;
-    const device PointLight* lights;
-    ShaderInputs inputs;
-
+// mutability is useful in the tests, but I want to make absolutely sure Metal knows its const
+#ifdef NOT_BUILDING_AS_MSL
+    Shape* shapes;
+    PointLight* lights;
+    World(Shape* s, PointLight* l, ShaderInputs& i)
+            : shapes(s), lights(l), inputs(i) {};
     World() {
         shapes = nullptr;
         lights = nullptr;
         inputs = {};
     };
+#else
+    const device Shape* shapes;
+    const device PointLight* lights;
     World(const device Shape* s, const device PointLight* l, const constant ShaderInputs& i)
         : shapes(s), lights(l), inputs(i) {};
+#endif
+
+    ShaderInputs inputs;
+
     float3 colour_at(const thread Ray& ray) const;
     void intersect(const thread Ray& ray, thread Intersections& hits) const;
     float3 shade_hit(const thread Comps& comps) const;

@@ -16,8 +16,8 @@ fn cc_tests(){
 }
 
 #[no_mangle]
-extern fn default_world(out: &mut WorldView) {
-    let mut world = World::default();
+extern fn create_default_world(out: &mut WorldView) -> Box<World> {
+    let mut world = Box::new(World::default());
     let mut sphere = Shape::default();
     sphere.material.colour = vec3a(0.8, 1.0, 0.6);
     sphere.material.diffuse = 0.7;
@@ -31,8 +31,12 @@ extern fn default_world(out: &mut WorldView) {
         intensity: vec3a(1.0, 1.0, 1.0),
     });
 
-    *out = world.view()
+    *out = world.view();
+    world
 }
+
+#[no_mangle]
+extern fn drop_world(_: Box<World>){}
 
 // TODO: figure out how to make a macro i can just put on the struct def, cause this seems dumb.
 #[no_mangle]

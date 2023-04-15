@@ -1,6 +1,21 @@
-> Trying to take notes on bugs I encounter, so I know what to do if I make the same mistake in other projects.
+> Trying to take notes on bugs I encounter, so I know what to do if I make the same mistake in other projects.  
+> These are in reverse chronological order. 
 
-## calling rust functions from c tests
+### rust bindgen to call c from rust
+
+Block it from trying to generate bindings for the vector types and insert lines that use `type` to alias to glam ones. 
+But that stops it from deriving Copy and Clone because it doesn't know those are just data blobs now. 
+I can just write them myself, but it's annoying cause that's pretty much the same amount of code as defining 
+the structs twice. Takes away the chance of forgetting to change both tho which is good and makes calling c from 
+rust for tests easier than my previous manual bindings for calling rust from c. 
+
+Trying to test the `ray.position` function and the vector returned is wrong but setting a break point in 
+the c code it's right before returning. Had this problem before where the calling convention for simd vectors must be 
+different. Was hoping it might just be an alignment thing since the bindgen tests also failed. 
+Using `alignas(16)` on my fake struct definitions fixes their tests since that's teh real alignment of the glam types. 
+But returning a float4 still doesn't work. Seems strange since passing it in on the struct works.  
+
+### calling rust functions from c tests
 
 Using a WorldView as an output parameter, the values in the arrays are all wrong with a lot of zeros. 
 The ShaderInputs passed by value work tho. The array pointers are the same but data is garbage. 

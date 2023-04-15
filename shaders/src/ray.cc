@@ -23,6 +23,13 @@ Ray Ray::transform(float4x4 mat) const {
     return Ray(mat * origin, mat * direction);
 }
 
+float4 Ray::position(float t) const {
+    float4 o = origin;
+    float4 d = direction * t;
+    float4 r = o + d;
+    return r;
+}
+
 // TODO: better to just sort once at the end? do CSG then decide
 //       seems like you mostly don't need the whole thing sorted
 //       except for refraction so doing it for shadows too is strange,

@@ -30,24 +30,11 @@ typedef struct Comps {
     float4 under_point;
 } Comps;
 
-typedef struct World {
-// mutability is useful in the tests, but I want to make absolutely sure Metal knows its const
-#ifdef NOT_BUILDING_AS_MSL
-    Shape* shapes;
-    PointLight* lights;
-    World(Shape* s, PointLight* l, ShaderInputs& i)
-            : shapes(s), lights(l), inputs(i) {};
-    World() {
-        shapes = nullptr;
-        lights = nullptr;
-        inputs = {};
-    };
-#else
+typedef struct WorldView {
     const device Shape* shapes;
     const device PointLight* lights;
-    World(const device Shape* s, const device PointLight* l, const constant ShaderInputs& i)
-        : shapes(s), lights(l), inputs(i) {};
-#endif
+    WorldView(const device Shape* s, const device PointLight* l, const constant ShaderInputs& i)
+            : shapes(s), lights(l), inputs(i) {};
 
     ShaderInputs inputs;
 
@@ -57,6 +44,6 @@ typedef struct World {
     bool is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const;
     Comps prepare_comps(const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const;
     void refraction_path(thread Comps&, const thread Intersection&, const thread Intersections&) const;
-} World;
+} WorldView;
 
 #endif 

@@ -2,7 +2,7 @@
 
 // Since Metal doesn't allow recursion in fragment shaders, this iteratively processes a queue of rays.
 // When a new ray needs to be spawned for a reflection or refraction, it just gets pushed to the queue.
-float3 World::colour_at(const thread Ray& first_ray) const {
+float3 WorldView::colour_at(const thread Ray& first_ray) const {
     float3 colour = BLACK();
     Intersections hits;
     RayQueue queue;
@@ -41,14 +41,14 @@ float3 World::colour_at(const thread Ray& first_ray) const {
     return colour;
 }
 
-void World::intersect(const thread Ray& ray, thread Intersections& hits) const {
+void WorldView::intersect(const thread Ray& ray, thread Intersections& hits) const {
     for (uint32_t i=0;i<inputs.shape_count;i++){
         Shape shape = shapes[i];
         shape.intersect(ray, hits);
     }
 }
 
-float3 World::shade_hit(const thread Comps& comps) const {
+float3 WorldView::shade_hit(const thread Comps& comps) const {
     float3 colour = BLACK();
     for (uint32_t i=0;i<inputs.light_count;i++){
         PointLight light = lights[i];
@@ -60,7 +60,7 @@ float3 World::shade_hit(const thread Comps& comps) const {
 }
 
 // TODO: just check for a hit in the range without sorting the whole Intersections 
-bool World::is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const {
+bool WorldView::is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const {
     float4 light_direction = light_pos - hit_pos;
     Ray ray = {hit_pos, normalize(light_direction)};
     Intersections hits;
@@ -74,7 +74,7 @@ bool World::is_shadowed(const thread float4& light_pos, const thread float4& hit
     }
 }
 
-Comps World::prepare_comps(const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const {
+Comps WorldView::prepare_comps(const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const {
     Shape object = shapes[hit.obj];
     Comps comps;
     comps.t = hit.t;
@@ -95,7 +95,7 @@ Comps World::prepare_comps(const thread Intersection& hit, const thread Ray& ray
 }
 
 // TODO: really feels like this shouldn't need to use an extra list.
-void World::refraction_path(thread Comps& comps, const thread Intersection& hit, const thread Intersections& xs) const {
+void WorldView::refraction_path(thread Comps& comps, const thread Intersection& hit, const thread Intersections& xs) const {
     Intersections containers;
     for (int i=0;i<xs.count;i++){
         Intersection check = xs.hits[i];

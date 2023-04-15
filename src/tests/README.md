@@ -1,7 +1,7 @@
-## Licensing 
+## Licensing
 
-The files beginning with the `feature_` prefix are translated from the tests included 
-in The Ray Tracer Challenge, under the following license. 
+The files beginning with the `feature_` prefix are translated from the gherkin test scenarios 
+included in The Ray Tracer Challenge, under the following license.
 
 > Copyright (c) 2017 The Pragmatic Programmers, LLC  
 > All rights reserved.  

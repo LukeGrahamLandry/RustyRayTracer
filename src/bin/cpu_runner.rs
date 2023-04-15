@@ -67,6 +67,6 @@ fn clamp_colour(f: f32) -> u32 {
 
 extern {
     /// # Safety
-    /// You need to make a new WorldView if the backing World has changed.
+    /// You need to make a new WorldView if the backing WorldView has changed.
     fn trace_pixel(position: Vec4, world: &WorldView, out: *mut Vec4);
 }

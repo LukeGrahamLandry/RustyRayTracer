@@ -1,20 +1,43 @@
 use std::{env, fs};
 use std::path::PathBuf;
 use std::process::Command;
+use bindgen::EnumVariation;
 
 const SHADERS_SRC: &str = "shaders/src";
-const SHADERS_TESTS: &str = "shaders/tests";
 
 // This feels insane. But also cc-rs refuses to create .o files from anything that ends in .metal
 // and Xcode refuses to link against metal_stdlib for anything that doesn't end in .metal so here we are.
 fn main() {
     assert_targeting_macos();
     cargo_watch_changes();
+    build_as_cpp();
+    run_bindgen();
     change_file_extensions("cc", "metal");
     build_as_msl();
     change_file_extensions("metal", "cc");
-    build_as_cpp();
 }
+
+fn run_bindgen() {
+    let bindings = bindgen::Builder::default()
+        .header("shaders/src/bindings.h")
+        .clang_args(&["-DNOT_BUILDING_AS_MSL", "-DDOING_RUST_BINDGEN", "-x", "c++", "-std=c++17"])
+        .default_enum_style(EnumVariation::Rust { non_exhaustive: false })
+        .blocklist_type("float4")
+        .blocklist_type("float4x4")
+        .blocklist_type("float3")
+        .raw_line("type float4=glam::Vec4;")
+        .raw_line("type float4x4=glam::Mat4;")
+        .raw_line("type float3=glam::Vec3A;")
+        .derive_copy(true)
+        .generate()
+        .unwrap();
+
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("Couldn't write bindings!");
+}
+
 
 /// Compiles the shaders xcode project into a .metallib file.
 fn build_as_msl(){
@@ -39,13 +62,12 @@ fn build_as_cpp(){
         .cpp(true)
         .flag("-std=c++14")
         .files(cc_src_files(SHADERS_SRC))
-        .files(cc_src_files(SHADERS_TESTS))
         .compile("shaders");
 }
 
 fn cargo_watch_changes(){
     println!("cargo:rerun-if-changed=src");
-    println!("cargo:rerun-if-changed=shaders/tests");
+    println!("cargo:rerun-if-changed=shaders/mod");
 
     // List files individually because changing extensions counts as modifying the dir.
     fs::read_dir(SHADERS_SRC)

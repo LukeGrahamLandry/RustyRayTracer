@@ -14,9 +14,7 @@ set(CMAKE_CXX_STANDARD 14)
 include_directories(src)
 
 add_executable(unused
-        tests/main.cc
         src/common.h
-        src/material.cc
         src/shaders.cc
         src/material.h
         src/ray.cc
@@ -25,4 +23,4 @@ add_executable(unused
         src/shapes.h
         src/world.cc
         src/world.h
-        )
+        src/material.cc)

@@ -12,9 +12,7 @@ typedef struct Ray {
     Ray() : Ray(float4(0), float4(0)) {};
     Ray(float4 o, float4 d) : origin(o), direction(d) {};
     Ray transform(float4x4 mat) const;
-    float4 position(float t) const {
-        return origin + (direction * t);
-    }
+    float4 position(float t) const;
 } Ray;
 
 

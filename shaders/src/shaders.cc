@@ -7,7 +7,7 @@
 
 extern "C" {
     // This gets called from cpu_runner.
-    void trace_pixel(float4 position, const World& world, float4* res){
+    void trace_pixel(float4 position, const WorldView& world, float4* res){
         Ray ray = world.inputs.camera.ray_for_pixel(position.x, position.y);
         float3 colour = world.colour_at(ray);
         *res = make_float4(colour.x, colour.y, colour.z, 1.0);
@@ -27,7 +27,7 @@ fragment float4 trace_pixel(
     const device Shape* shapes [[buffer(1)]],
     const device PointLight* lights [[buffer(2)]]
 ){
-    World world = World(shapes, lights, inputs);
+    WorldView world = WorldView(shapes, lights, inputs);
     Ray ray = inputs.camera.ray_for_pixel(in.position.x, in.position.y);
     return float4(world.colour_at(ray), 1.0);
 };

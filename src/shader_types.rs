@@ -1,5 +1,7 @@
 use glam::{Mat4, Vec3A, Vec4};
 
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
 #[derive(Default)]
 pub struct World {
     shapes: Vec<Shape>,
@@ -56,88 +58,6 @@ fn is_colour(c: Vec3A) -> bool {
     is_frac(c.x) && is_frac(c.y) && is_frac(c.z)
 }
 
-// The structs below are used to pass information to the shaders.
-// It's important that they are all repr(C) and that field orders match.
-// They could be copy but it feels like I might accidentally modify after adding a copy to the world.
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, Default)]
-pub struct Camera {
-    transform_inverse: Mat4,
-    pixel_size: f32,
-    half_width: f32,
-    half_height: f32,
-    hsize: f32,
-    vsize: f32,
-    field_of_view: f32,
-}
-
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct Material {
-    pub colour: Vec3A,
-    pub ambient: f32,
-    pub diffuse: f32,
-    pub specular: f32,
-    pub shininess: f32,
-    pub reflective: f32,
-    pub transparency: f32,
-    pub refractive_index: f32
-}
-
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct PointLight {
-    pub position: Vec4,
-    pub intensity: Vec3A,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug)]
-pub enum ShapeType {
-    Sphere,
-    Plane,
-}
-
-#[repr(C)]  // Clone works because the world sets the index to be correct
-#[derive(Clone, Default, Debug)]
-pub struct Shape {
-    pub transform_inverse: Mat4,
-    pub shape: ShapeType,
-    // usize is 8 bytes on the cpu but 4 bytes on the gpu so never ever ever use it in structs
-    pub index: u32,
-    pub material: Material
-}
-
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct ShaderInputs {
-    pub camera: Camera,
-    pub shape_count: u32,
-    pub light_count: u32
-}
-
-impl Default for Material {
-    fn default() -> Self {
-        Material {
-            colour: Vec3A::new(1.0, 1.0, 1.0),
-            ambient: 0.1,
-            diffuse: 0.9,
-            specular: 0.9,
-            shininess: 200.0,
-            reflective: 0.0,
-            transparency: 0.0,
-            refractive_index: 1.0
-        }
-    }
-}
-
-impl Default for ShapeType {
-    fn default() -> Self {
-        ShapeType::Sphere
-    }
-}
-
 impl Shape {
     pub fn set_transform(&mut self, mat: Mat4) {
         self.transform_inverse = mat.inverse();
@@ -161,8 +81,7 @@ impl Camera {
         camera
     }
 
-    #[no_mangle]
-    pub extern fn resize(&mut self, hsize: usize, vsize: usize) {
+    pub fn resize(&mut self, hsize: usize, vsize: usize) {
         let half_view = (self.field_of_view / 2.0).tan();
         let aspect_ratio = (hsize as f32) / (vsize as f32);
         self.half_width = if aspect_ratio >= 1.0 {
@@ -186,16 +105,86 @@ impl Camera {
     }
 }
 
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct WorldView {
-    shapes: *const Shape,
-    lights: *const PointLight,
-    pub inputs: ShaderInputs
-}
-
 // I don't accept pointers being !Sync just because they can be made into mut ones.
 // It's unsafe to dereference them anyway so that's a you problem.
 // If something's only unsafe in unsafe code... that's safe. Or I'm just dumb and missing something here.
 // When passed to the c code, it never mutates.
 unsafe impl Sync for WorldView {}
+
+impl Default for Camera {
+    fn default() -> Self {
+        Camera {
+            transform_inverse: Default::default(),
+            pixel_size: 0.0,
+            half_width: 0.0,
+            half_height: 0.0,
+            hsize: 0.0,
+            vsize: 0.0,
+            field_of_view: 0.0,
+        }
+    }
+}
+
+impl Default for Material {
+    fn default() -> Self {
+        Material {
+            colour: Vec3A::new(1.0, 1.0, 1.0),
+            ambient: 0.1,
+            diffuse: 0.9,
+            specular: 0.9,
+            shininess: 200.0,
+            reflective: 0.0,
+            transparency: 0.0,
+            refractive_index: 1.0
+        }
+    }
+}
+
+impl Default for ShapeType {
+    fn default() -> Self {
+        ShapeType::Sphere
+    }
+}
+
+impl Default for Shape {
+    fn default() -> Self {
+        Shape {
+            transform_inverse: Default::default(),
+            shape: Default::default(),
+            index: 0,
+            __bindgen_padding_0: 0,
+            material: Default::default(),
+        }
+    }
+}
+
+impl Clone for Material {
+    fn clone(&self) -> Self {
+        Material {
+            colour: self.colour,
+            ambient: self.ambient,
+            diffuse: self.diffuse,
+            specular: self.specular,
+            shininess: self.shininess,
+            reflective: self.reflective,
+            transparency: self.transparency,
+            refractive_index: self.refractive_index,
+        }
+    }
+}
+
+impl Clone for Camera {
+    fn clone(&self) -> Self {
+        Camera {
+            transform_inverse: self.transform_inverse,
+            pixel_size: self.pixel_size,
+            half_width: self.half_width,
+            half_height: self.half_height,
+            hsize: self.hsize,
+            vsize: self.vsize,
+            field_of_view: self.field_of_view,
+        }
+    }
+}
+
+impl Copy for Camera {}

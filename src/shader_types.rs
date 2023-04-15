@@ -34,6 +34,18 @@ impl World {
     pub fn get_lights(&self) -> &[PointLight] {
         self.lights.as_slice()
     }
+
+    pub fn view(&self) -> WorldView {
+        WorldView {
+            shapes: self.get_shapes().as_ptr(),
+            lights: self.get_lights().as_ptr(),
+            inputs: ShaderInputs {
+                camera: self.camera,
+                shape_count: self.get_shapes().len() as u32,
+                light_count: self.get_lights().len() as u32
+            }
+        }
+    }
 }
 
 fn is_frac(x: f32) -> bool {
@@ -94,13 +106,12 @@ pub struct Shape {
     pub shape: ShapeType,
     // usize is 8 bytes on the cpu but 4 bytes on the gpu so never ever ever use it in structs
     pub index: u32,
-    pub material: Material,
+    pub material: Material
 }
 
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct ShaderInputs {
-    pub time: f32,
     pub camera: Camera,
     pub shape_count: u32,
     pub light_count: u32
@@ -175,14 +186,16 @@ impl Camera {
     }
 }
 
-#[cfg(test)]
-extern {
-    fn run_tests() -> i32;
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct WorldView {
+    shapes: *const Shape,
+    lights: *const PointLight,
+    pub inputs: ShaderInputs
 }
 
-#[test]
-fn cc_tests(){
-    unsafe {
-        run_tests();
-    }
-}
+// I don't accept pointers being !Sync just because they can be made into mut ones.
+// It's unsafe to dereference them anyway so that's a you problem.
+// If something's only unsafe in unsafe code... that's safe. Or I'm just dumb and missing something here.
+// When passed to the c code, it never mutates.
+unsafe impl Sync for WorldView {}

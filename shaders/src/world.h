@@ -11,7 +11,6 @@ typedef struct PointLight {
 } PointLight;
 
 typedef struct {
-    float time;
     Camera camera;
     uint32_t shape_count;
     uint32_t light_count;
@@ -34,9 +33,14 @@ typedef struct Comps {
 typedef struct World {
     const device Shape* shapes;
     const device PointLight* lights;
-    constant ShaderInputs& inputs;
-    
-    World(const device Shape* s, const device PointLight* l, constant ShaderInputs& i)
+    ShaderInputs inputs;
+
+    World() {
+        shapes = nullptr;
+        lights = nullptr;
+        inputs = {};
+    };
+    World(const device Shape* s, const device PointLight* l, const constant ShaderInputs& i)
         : shapes(s), lights(l), inputs(i) {};
     float3 colour_at(const thread Ray& ray) const;
     void intersect(const thread Ray& ray, thread Intersections& hits) const;
@@ -44,6 +48,6 @@ typedef struct World {
     bool is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const;
     Comps prepare_comps(const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const;
     void refraction_path(thread Comps&, const thread Intersection&, const thread Intersections&) const;
-} WorldView;
+} World;
 
 #endif 

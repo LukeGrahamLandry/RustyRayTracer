@@ -8,4 +8,3 @@
 shaders/build/**
 cmake-build-debug
 *.metallib
-shaders/tests/generated.h

@@ -10,7 +10,7 @@ use winit::event_loop::EventLoop;
 use winit::window::Window;
 use crate::controller::CameraController;
 use crate::demo::*;
-use crate::shader_types::{ShaderInputs, World};
+use crate::shader_types::World;
 
 pub trait RenderStrategy: Sized + 'static {
     fn new(app: &AppState) -> Self;
@@ -29,7 +29,6 @@ pub struct AppState {
     pub window: Window,
     pub world: World,
     timer: FrameTimer,
-    start: Instant,
     controller: CameraController
 }
 
@@ -51,18 +50,8 @@ impl AppState {
             window,
             world,
             timer: FrameTimer::new(),
-            start: Instant::now(),
             controller: CameraController::default()
         }, event_loop)
-    }
-
-    pub fn shader_inputs(&self) -> ShaderInputs {
-        ShaderInputs {
-            time: (Instant::now() - self.start).as_secs_f32(),
-            camera: self.world.camera,
-            shape_count: self.world.get_shapes().len() as u32,
-            light_count: self.world.get_lights().len() as u32
-        }
     }
 
     pub fn run<T: RenderStrategy>(mut self, mut renderer: T, event_loop: EventLoop<()>) {

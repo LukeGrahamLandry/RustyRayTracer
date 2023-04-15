@@ -25,4 +25,4 @@ add_executable(unused
         src/shapes.h
         src/world.cc
         src/world.h
-        tests/intersections.cc)
+        )

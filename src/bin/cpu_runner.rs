@@ -2,7 +2,7 @@ use glam::{Vec4, vec4};
 use rayon::iter::IntoParallelIterator;
 use softbuffer::GraphicsContext;
 use winit::dpi::LogicalSize;
-use raytracer::shader_types::{PointLight, ShaderInputs, Shape};
+use raytracer::shader_types::WorldView;
 use raytracer::window::{AppState, RenderStrategy};
 use rayon::prelude::*;
 
@@ -27,9 +27,7 @@ impl RenderStrategy for CpuState {
     fn render(&mut self, app: &AppState) {
         // TODO: this will be slower depending on scale factor cause its doing extra work instead of downscaling.
         let (width, height) = (app.window.inner_size().width, app.window.inner_size().height);
-        let inputs = &app.shader_inputs();
-        let shapes = app.world.get_shapes();
-        let lights = app.world.get_lights();
+        let world = &app.world.view();
         let scale = app.window.scale_factor() as f32;
 
         (0..(width * height))
@@ -39,7 +37,7 @@ impl RenderStrategy for CpuState {
                 let pos = vec4((i % width) as f32 / scale, (i / width) as f32 / scale, 0.0, 0.0);
 
                 unsafe {
-                    trace_pixel(pos, inputs, shapes.as_ptr(), lights.as_ptr(), &mut colour)
+                    trace_pixel(pos, world, &mut colour)
                 }
 
                 to_packed_colour(colour)
@@ -69,7 +67,6 @@ fn clamp_colour(f: f32) -> u32 {
 
 extern {
     /// # Safety
-    /// `shapes` and `lights` must point to arrays with the same length as declared by `inputs`.
-    /// The `index` fields of `Shape` objects must be correct indexes into the array.
-    fn trace_pixel(position: Vec4, inputs: &ShaderInputs, shapes: *const Shape, lights: *const PointLight, out: *mut Vec4);
+    /// You need to make a new WorldView if the backing World has changed.
+    fn trace_pixel(position: Vec4, world: &WorldView, out: *mut Vec4);
 }

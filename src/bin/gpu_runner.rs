@@ -75,7 +75,7 @@ impl GpuState {
     }
 
     fn set_buffers(&self, app: &AppState, encoder: &RenderCommandEncoderRef) {
-        encoder.set_fragment_bytes(0, mem::size_of::<ShaderInputs>() as u64, ptr(&app.shader_inputs()));
+        encoder.set_fragment_bytes(0, mem::size_of::<ShaderInputs>() as u64, ptr(&app.world.view().inputs));
         encoder.set_fragment_buffer(1, Some(&self.shapes_buffer), 0);
         encoder.set_fragment_buffer(2, Some(&self.lights_buffer), 0);
     }

@@ -1,7 +1,7 @@
 # Rusty Ray Tracer
 
-This ray tracer is based on [The Ray Tracer Challenge by Jamis Buck](http://raytracerchallenge.com). It's 
-implemented using Metal, Apple's graphics API, so it only supports macOS.
+This is an implementation of the ray tracer described in  [The Ray Tracer Challenge by Jamis Buck](http://raytracerchallenge.com). 
+It's written with Metal, Apple's graphics API, so it only supports macOS.
 
 ## Architecture 
 
@@ -43,3 +43,4 @@ The window can be resized as normal.
 Install rust and the XCode Command Line Tools. Then just `cargo run` as usual. 
 By default, it uses the gpu_runner. You can also `cargo run --release --bin cpu_runner` 
 but it will be much slower (and complete trash when compiled in debug mode). 
+`cargo test` will... run the tests.

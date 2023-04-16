@@ -3,18 +3,7 @@
 #include "world.h"
 #include "ray.h"
 
-#ifdef NOT_BUILDING_AS_MSL
-
-extern "C" {
-    // This gets called from cpu_runner.
-    void trace_pixel(float4 position, const WorldView& world, float4* res){
-        Ray ray = world.inputs.camera.ray_for_pixel(position.x, position.y);
-        float3 colour = world.colour_at(ray);
-        *res = make_float4(colour.x, colour.y, colour.z, 1.0);
-    };
-}
-
-#else
+#ifndef NOT_BUILDING_AS_MSL
 
 struct VertOut {
     float4 position [[position]];

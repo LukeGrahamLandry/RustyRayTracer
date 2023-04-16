@@ -19,7 +19,7 @@ fn main() {
 
 fn run_bindgen() {
     let bindings = bindgen::Builder::default()
-        .header("shaders/src/bindings.h")
+        .header("shaders/src/shaders.cc")
         .clang_args(&["-DNOT_BUILDING_AS_MSL", "-DDOING_RUST_BINDGEN", "-x", "c++", "-std=c++17"])
         .default_enum_style(EnumVariation::Rust { non_exhaustive: false })
         .blocklist_type("float4")
@@ -28,7 +28,6 @@ fn run_bindgen() {
         .raw_line("type float4=glam::Vec4;")
         .raw_line("type float4x4=glam::Mat4;")
         .raw_line("type float3=glam::Vec3A;")
-        .derive_copy(true)
         .generate()
         .unwrap();
 

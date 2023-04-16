@@ -12,8 +12,16 @@ rust for tests easier than my previous manual bindings for calling rust from c.
 Trying to test the `ray.position` function and the vector returned is wrong but setting a break point in 
 the c code it's right before returning. Had this problem before where the calling convention for simd vectors must be 
 different. Was hoping it might just be an alignment thing since the bindgen tests also failed. 
-Using `alignas(16)` on my fake struct definitions fixes their tests since that's teh real alignment of the glam types. 
+Using `alignas(16)` on my fake struct definitions fixes their tests since that's the real alignment of the glam types. 
 But returning a float4 still doesn't work. Seems strange since passing it in on the struct works.  
+But I guess a big array of shape structs can never make the mistake of being passed in a special wide register 
+because it's just a pointer. Which would mean they do have the same representation in memory when used as a field. 
+
+Writing my own LA structs on the c side and using those in the cpu runner instead of simd.h fixed it. 
+And it looks right. Also needed to be careful about glam using row major order.  
+Made a mistake making my float3 have a padding field, Vec3A just forces 16 alignment which is a different thing. 
+As a bonus, cpu_runner can be cross-platform now. Should figure out how to turn off glam simd on x86 
+since that will probably mess it up similarly to Apple's simd. 
 
 ### calling rust functions from c tests
 

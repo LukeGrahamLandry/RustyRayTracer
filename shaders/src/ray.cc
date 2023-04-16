@@ -24,10 +24,7 @@ Ray Ray::transform(float4x4 mat) const {
 }
 
 float4 Ray::position(float t) const {
-    float4 o = origin;
-    float4 d = direction * t;
-    float4 r = o + d;
-    return r;
+    return origin + (direction * t);
 }
 
 // TODO: better to just sort once at the end? do CSG then decide

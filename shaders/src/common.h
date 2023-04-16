@@ -15,20 +15,10 @@
 #define EPSILON 0.01
 
 #define unreachable() __builtin_unreachable();
-#define BLACK() float3(0)
 
 // NOT_BUILDING_AS_MSL is set by build.rs when building as c++ for cpu_runner.
 #ifdef NOT_BUILDING_AS_MSL
-
-// bindgen can't find simd and if you give it the include-path it chokes on a bunch of other stuff.
-// But I want to use the glam types anyway so who cares.
-#ifndef DOING_RUST_BINDGEN
-#include <simd/simd.h>
-using namespace simd;
-#endif
-
-#define Point(x, y, z) simd_make_float4(x, y, z, 1.0)
-#define Vector(x, y, z) simd_make_float4(x, y, z, 0.0)
+#include "la.h"
 
 // These are address qualifiers in MSL. Define them as macros that expand to an empty string.
 // That's all it takes to compile it as c++.
@@ -40,8 +30,11 @@ using namespace simd;
 
 #include <metal_stdlib>
 using namespace metal;
-#define Point(x, y, z) float4(x, y, z, 1.0)
-#define Vector(x, y, z) float4(x, y, z, 0.0)
 
 #endif
 #endif
+
+#define Point(x, y, z) float4(x, y, z, 1.0)
+#define Vector(x, y, z) float4(x, y, z, 0.0)
+#define BLACK() float3(0.0, 0.0, 0.0)
+#define ZERO_VEC() float4(0.0, 0.0, 0.0, 0.0)

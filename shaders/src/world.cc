@@ -53,7 +53,7 @@ float3 WorldView::shade_hit(const thread Comps& comps) const {
     for (uint32_t i=0;i<inputs.light_count;i++){
         PointLight light = lights[i];
         bool shadowed = is_shadowed(light.position, comps.over_point);
-        colour += comps.material.lighting(light, comps.over_point, comps.eyev, comps.normalv, shadowed);
+        colour += comps.material.lighting(comps.colour, light, comps.over_point, comps.eyev, comps.normalv, shadowed);
     }
     
     return colour;
@@ -91,6 +91,7 @@ Comps WorldView::prepare_comps(const thread Intersection& hit, const thread Ray&
     
     comps.reflectv = reflect(ray.direction, comps.normalv);
     refraction_path(comps, hit, xs);
+    comps.colour = pattern_colour(object, comps.point);
     return comps;
 }
 
@@ -123,6 +124,36 @@ void WorldView::refraction_path(thread Comps& comps, const thread Intersection& 
                 comps.n2 = s.material.refractive_index;
             }
             break;
+        }
+    }
+}
+
+float3 WorldView::pattern_colour(Shape object, float4 world_point) const {
+    if (object.material.pattern_index < 0) return object.material.colour;
+    Pattern p = patterns[object.material.pattern_index];
+    float4 object_point = object.transform_inverse * world_point;
+    float4 pattern_point = p.transform_inverse * object_point;
+
+    switch (p.pattern) {
+        case Solid:
+            return p.a;
+        case Stripes: {
+            int which = (int) floor(pattern_point.x);
+            return which % 2 == 0 ? p.a : p.b;
+        }
+        case Gradient: {
+            float3 distance = p.b - p.a;
+            float t = pattern_point.x - floor(pattern_point.x);
+            return p.a + (distance * t);
+        }
+        case Ring: {
+            float dist = sqrt((pattern_point.x * pattern_point.x) + (pattern_point.z * pattern_point.z));
+            int which = (int) floor(dist);
+            return which % 2 == 0 ? p.a : p.b;
+        }
+        case Checker: {
+            int which = (int) (floor(pattern_point.x) + floor(pattern_point.y) + floor(pattern_point.z));
+            return which % 2 == 0 ? p.a : p.b;
         }
     }
 }

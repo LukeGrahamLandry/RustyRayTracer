@@ -26,8 +26,9 @@ use any of Metal's fancy ray tracing acceleration structure stuff because it see
 
 **From the book**
 
-- Planes, Spheres.
+- Shapes: planes, spheres.
 - Lighting, shadows, reflection, refraction.
+- Patterns: stripes, gradients, rings, checkers.
 
 **Additions**
 

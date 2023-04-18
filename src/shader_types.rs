@@ -5,6 +5,7 @@ use glam::{Mat4, Vec3A};
 pub struct World {
     pub shapes: Vec<Shape>,
     pub lights: Vec<PointLight>,
+    pub patterns: Vec<Pattern>,
     pub camera: Camera,
 }
 
@@ -29,6 +30,11 @@ impl World {
         self.lights.push(light);
     }
 
+    pub fn add_pattern(&mut self, pattern: Pattern) -> i32 {
+        self.patterns.push(pattern);
+        (self.patterns.len() - 1) as i32
+    }
+
     pub fn get_shapes(&self) -> &[Shape] {
         self.shapes.as_slice()
     }
@@ -37,10 +43,16 @@ impl World {
         self.lights.as_slice()
     }
 
+    pub fn get_patterns(&self) -> &[Pattern] {
+        self.patterns.as_slice()
+    }
+
     pub fn view(&self) -> WorldView {
         WorldView {
             shapes: self.shapes.as_ptr(),
             lights: self.lights.as_ptr(),
+            patterns: self.patterns.as_ptr(),
+            __bindgen_padding_0: 0,
             inputs: ShaderInputs {
                 camera: self.camera,
                 shape_count: self.shapes.len() as u32,
@@ -109,6 +121,13 @@ impl Camera {
     }
 }
 
+impl Pattern {
+    pub fn set_transform(&mut self, mat: Mat4) {
+        self.transform_inverse = mat.inverse();
+    }
+}
+
+
 // I don't accept pointers being !Sync just because they can be made into mut ones.
 // It's unsafe to dereference them anyway so that's a you problem.
 // If something's only unsafe in unsafe code... that's safe. Or I'm just dumb and missing something here.
@@ -133,6 +152,7 @@ impl Default for Material {
     fn default() -> Self {
         Material {
             colour: Vec3A::new(1.0, 1.0, 1.0),
+            pattern_index: -1,
             ambient: 0.1,
             diffuse: 0.9,
             specular: 0.9,
@@ -165,6 +185,13 @@ impl Clone for Material {
 
 impl Copy for Camera {}
 impl Clone for Camera {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl Copy for Pattern {}
+impl Clone for Pattern {
     fn clone(&self) -> Self {
         *self
     }

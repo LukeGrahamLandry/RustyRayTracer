@@ -1,9 +1,9 @@
 #include "material.h"
 
 // https://en.wikipedia.org/wiki/Phong_reflection_model
-float3 Material::lighting(PointLight light, float4 position, float4 eye_vector, float4 normal_vector, bool in_shadow) const {
-    float3 base_colour = colour * light.intensity;
-    float3 ambient_colour = colour * ambient;
+float3 Material::lighting(float3 object_colour, PointLight light, float4 position, float4 eye_vector, float4 normal_vector, bool in_shadow) const {
+    float3 base_colour = object_colour * light.intensity;
+    float3 ambient_colour = object_colour * ambient;
 
     if (in_shadow) return ambient_colour;
 

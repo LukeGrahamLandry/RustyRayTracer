@@ -128,6 +128,7 @@ fn preset_world(key: Option<VirtualKeyCode>) -> Option<World> {
         Some(VirtualKeyCode::Key2) => Some(chapter9()),
         Some(VirtualKeyCode::Key3) => Some(chapter11()),
         Some(VirtualKeyCode::Key4) => Some(chapter6()),
+        Some(VirtualKeyCode::Key5) => Some(chapter10()),
         _ => None,
     }
 }

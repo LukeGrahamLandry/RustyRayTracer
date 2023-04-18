@@ -14,9 +14,10 @@ fragment float4 trace_pixel(
     VertOut in [[stage_in]],
     constant ShaderInputs& inputs [[buffer(0)]],
     const device Shape* shapes [[buffer(1)]],
-    const device PointLight* lights [[buffer(2)]]
+    const device PointLight* lights [[buffer(2)]],
+    const device Pattern* patterns [[buffer(3)]]
 ){
-    WorldView world = WorldView(shapes, lights, inputs);
+    WorldView world = WorldView(shapes, lights, inputs, patterns);
     Ray ray = inputs.camera.ray_for_pixel(in.position.x, in.position.y);
     return float4(world.colour_at(ray), 1.0);
 };

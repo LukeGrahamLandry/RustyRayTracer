@@ -24,6 +24,7 @@ struct GpuState {
     pipeline_state: RenderPipelineState,
     shapes_buffer: Buffer,
     lights_buffer: Buffer,
+    patterns_buffer: Buffer,
     device: Device,
 }
 
@@ -40,6 +41,7 @@ impl RenderStrategy for GpuState {
             command_queue: device.new_command_queue(),
             shapes_buffer: init_buffer(&device, app.world.get_shapes()),
             lights_buffer: init_buffer(&device, app.world.get_lights()),
+            patterns_buffer: init_buffer(&device, app.world.get_patterns()),
             device,
         }
     }
@@ -56,6 +58,7 @@ impl RenderStrategy for GpuState {
     fn world_changed(&mut self, app: &AppState) {
         self.shapes_buffer = init_buffer(&self.device, app.world.get_shapes());
         self.lights_buffer = init_buffer(&self.device, app.world.get_lights());
+        self.patterns_buffer = init_buffer(&self.device, app.world.get_patterns());
     }
 }
 
@@ -84,6 +87,7 @@ impl GpuState {
         );
         encoder.set_fragment_buffer(1, Some(&self.shapes_buffer), 0);
         encoder.set_fragment_buffer(2, Some(&self.lights_buffer), 0);
+        encoder.set_fragment_buffer(3, Some(&self.patterns_buffer), 0);
     }
 }
 

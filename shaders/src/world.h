@@ -22,6 +22,7 @@ typedef struct Comps {
     float n2;
     bool inside;
     Material material;
+    float3 colour;
     float4 point;
     float4 eyev;
     float4 normalv;
@@ -33,10 +34,10 @@ typedef struct Comps {
 typedef struct WorldView {
     const device Shape* shapes;
     const device PointLight* lights;
-    WorldView(const device Shape* s, const device PointLight* l, const constant ShaderInputs& i)
-            : shapes(s), lights(l), inputs(i) {};
-
+    const device Pattern* patterns;
     ShaderInputs inputs;
+    WorldView(const device Shape* s, const device PointLight* l, const constant ShaderInputs& i, const device Pattern* p)
+            : shapes(s), lights(l), patterns(p), inputs(i) {};
 
     float3 colour_at(const thread Ray& ray) const;
     void intersect(const thread Ray& ray, thread Intersections& hits) const;
@@ -44,6 +45,7 @@ typedef struct WorldView {
     bool is_shadowed(const thread float4& light_pos, const thread float4& hit_pos) const;
     Comps prepare_comps(const thread Intersection& hit, const thread Ray& ray, const thread Intersections& xs) const;
     void refraction_path(thread Comps&, const thread Intersection&, const thread Intersections&) const;
+    float3 pattern_colour(Shape m, float4 point) const;
 } WorldView;
 
 #endif 

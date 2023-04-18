@@ -11,6 +11,7 @@ use winit::{
     event::{Event, WindowEvent},
     event_loop::ControlFlow,
 };
+use crate::scene::{load_scene, SCENE_FILES};
 
 pub trait RenderStrategy: Sized + 'static {
     fn new(app: &AppState) -> Self;
@@ -39,7 +40,7 @@ impl AppState {
         println!(
             "Use the number keys to switch between included scenes. The window can be resized."
         );
-        let world = chapter7();
+        let world = load_scene(SCENE_FILES[0]).unwrap();
         let event_loop = winit::event_loop::EventLoop::new();
         let size = LogicalSize::new(world.camera.size().0, world.camera.size().1);
 

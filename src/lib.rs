@@ -10,3 +10,4 @@ mod bindings;
 
 #[cfg(test)]
 mod rtc_tests;
+mod scene;

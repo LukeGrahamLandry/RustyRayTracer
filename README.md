@@ -33,6 +33,7 @@ use any of Metal's fancy ray tracing acceleration structure stuff because it see
 **Additions**
 
 - Moving camera. 
+- Parse the yaml scenes descriptions used in the book. 
 
 ### Controls
 

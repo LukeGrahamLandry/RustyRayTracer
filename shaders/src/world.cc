@@ -91,7 +91,7 @@ Comps WorldView::prepare_comps(const thread Intersection& hit, const thread Ray&
     
     comps.reflectv = reflect(ray.direction, comps.normalv);
     refraction_path(comps, hit, xs);
-    comps.colour = pattern_colour(object, comps.point);
+    comps.colour = pattern_colour(object, comps.over_point);
     return comps;
 }
 

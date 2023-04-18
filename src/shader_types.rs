@@ -167,11 +167,23 @@ impl Default for Material {
 impl ShapeType {
     pub(crate) fn create(self) -> Shape {
         Shape {
-            transform_inverse: Default::default(),
+            transform_inverse: Mat4::IDENTITY,
             shape: self,
             index: 0,
             __bindgen_padding_0: 0,
             material: Default::default(),
+        }
+    }
+}
+
+impl PatternType {
+    pub(crate) fn create(self) -> Pattern {
+        Pattern {
+            a: Default::default(),
+            b: Default::default(),
+            transform_inverse: Mat4::IDENTITY,
+            __bindgen_padding_0: 0,
+            pattern: self,
         }
     }
 }

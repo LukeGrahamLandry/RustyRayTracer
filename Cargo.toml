@@ -19,6 +19,7 @@ core-graphics-types = "0.1"
 objc = "0.2.7"
 rayon="1.7.0"
 softbuffer = "0.2.0"
+yaml-rust = "0.4.5"
 
 [build-dependencies]
 cc = "1.0.79"

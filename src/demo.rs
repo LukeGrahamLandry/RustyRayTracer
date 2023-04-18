@@ -22,34 +22,29 @@ pub fn chapter6() -> World {
 pub fn chapter11() -> World {
     let mut world = base_world();
 
+    let mut back = ShapeType::Plane.create();
+    back.material.specular = 0.0;
+    back.material.pattern_index = world.add_pattern(Pattern {
+        a: vec3a(0.0, 0.0, 0.0),
+        b: vec3a(1.0, 1.0, 1.0),
+        pattern: PatternType::Checker,
+        __bindgen_padding_0: 0,
+        transform_inverse: Mat4::IDENTITY,
+    });
+    back.set_transform(Mat4::from_rotation_x(PI / 2.0));
+    world.add_shape(back);
+
     // less colour for less bright cause add
     let mut big = glass_sphere();
+    big.material.colour = vec3a(0.5, 0.5, 0.5);
     big.set_transform(Mat4::from_translation(vec3(-0.5, 1.0, 0.5)));
-    big.material.diffuse = 0.2;
-    big.material.ambient = 0.01;
     world.add_shape(big);
 
     let mut small = glass_sphere();
-    small.set_transform(
-        Mat4::from_translation(vec3(-0.5, 1.0, 0.5)) * Mat4::from_scale(vec3(0.5, 0.5, 0.5)),
-    );
-    small.material.diffuse = 0.2;
-    small.material.ambient = 0.01;
+    small.material.colour = vec3a(0.5, 0.5, 0.5);
+    small.material.refractive_index = 1.0;
+    small.set_transform(Mat4::from_translation(vec3(-0.5, 1.0, 0.5)) * Mat4::from_scale(vec3(0.5, 0.5, 0.5)));
     world.add_shape(small);
-
-    let mut back = ShapeType::Sphere.create();
-    back.material.colour = vec3a(0.9, 0.1, 0.1);
-    back.set_transform(
-        Mat4::from_translation(vec3(-0.5, 1.0, 1.5)) * Mat4::from_scale(vec3(0.5, 0.5, 0.5)),
-    );
-    world.add_shape(back);
-
-    let mut floor = ShapeType::Sphere.create();
-    floor.shape = ShapeType::Plane;
-    floor.material.colour.x = 0.8;
-    floor.material.specular = 0.0;
-    floor.material.reflective = 0.5;
-    world.add_shape(floor);
 
     world
 }
@@ -100,8 +95,6 @@ pub fn chapter7() -> World {
     world
 }
 
-// TODO: import the yaml scene descriptions
-//       https://forum.raytracerchallenge.com/board/4/gallery?q=scene+description
 fn base_world() -> World {
     let mut world = World {
         camera: Camera::new(1000, 500, PI / 3.0),
@@ -235,7 +228,7 @@ pub fn chapter10() -> World {
 
 fn glass_sphere() -> Shape {
     let mut s = ShapeType::Sphere.create();
-    s.material.transparency = 0.5;
+    s.material.transparency = 1.0;
     s.material.refractive_index = 1.5;
     s
 }

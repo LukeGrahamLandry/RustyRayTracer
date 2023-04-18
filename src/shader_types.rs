@@ -1,5 +1,5 @@
-use glam::{Mat4, Vec3A};
 pub use crate::bindings::*;
+use glam::{Mat4, Vec3A};
 
 #[derive(Default)]
 pub struct World {
@@ -10,13 +10,14 @@ pub struct World {
 
 impl World {
     pub fn add_shape(&mut self, mut shape: Shape) {
-        debug_assert!(is_frac(shape.material.diffuse)
-            && is_frac(shape.material.ambient)
-            && is_frac(shape.material.reflective)
-            && is_frac(shape.material.specular)
-            && is_frac(shape.material.transparency)
-            && is_colour(shape.material.colour)
-            && shape.material.refractive_index >= 0.0
+        debug_assert!(
+            is_frac(shape.material.diffuse)
+                && is_frac(shape.material.ambient)
+                && is_frac(shape.material.reflective)
+                && is_frac(shape.material.specular)
+                && is_frac(shape.material.transparency)
+                && is_colour(shape.material.colour)
+                && shape.material.refractive_index >= 0.0
         );
 
         shape.index = self.shapes.len() as u32;
@@ -43,8 +44,8 @@ impl World {
             inputs: ShaderInputs {
                 camera: self.camera,
                 shape_count: self.shapes.len() as u32,
-                light_count: self.lights.len() as u32
-            }
+                light_count: self.lights.len() as u32,
+            },
         }
     }
 }
@@ -138,7 +139,7 @@ impl Default for Material {
             shininess: 200.0,
             reflective: 0.0,
             transparency: 0.0,
-            refractive_index: 1.0
+            refractive_index: 1.0,
         }
     }
 }

@@ -1,9 +1,9 @@
 mod intersections;
 mod rays;
 
-use glam::{Mat4, vec3, vec3a, vec4, Vec4};
 use crate::bindings::Ray;
-use crate::shader_types::{Intersection, Intersections, MAX_HITS, PointLight, ShapeType, World};
+use crate::shader_types::{Intersection, Intersections, PointLight, ShapeType, World, MAX_HITS};
+use glam::{vec3, vec3a, vec4, Mat4, Vec4};
 
 fn default_test_world() -> World {
     let mut world = World::default();
@@ -49,18 +49,12 @@ impl Default for Intersections {
 
 impl Intersection {
     fn new(t: f32, obj: u32) -> Intersection {
-        Intersection {
-            t,
-            obj,
-        }
+        Intersection { t, obj }
     }
 }
 
 impl Ray {
     fn new(origin: Vec4, direction: Vec4) -> Ray {
-        Ray {
-            origin,
-            direction,
-        }
+        Ray { origin, direction }
     }
 }

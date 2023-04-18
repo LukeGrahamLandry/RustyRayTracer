@@ -1,7 +1,7 @@
-use std::{env, fs};
+use bindgen::EnumVariation;
 use std::path::PathBuf;
 use std::process::Command;
-use bindgen::EnumVariation;
+use std::{env, fs};
 
 const SHADERS_SRC: &str = "shaders/src";
 
@@ -23,7 +23,9 @@ type float3=glam::Vec3A;
 fn main() {
     let is_macos = env::var("TARGET").unwrap().contains("-apple-darwin");
     if !is_macos {
-        println!("cargo:warning=Since gpu_runner uses Metal, it will only work when targeting MacOS.");
+        println!(
+            "cargo:warning=Since gpu_runner uses Metal, it will only work when targeting MacOS."
+        );
     }
     cargo_watch_changes();
     change_file_extensions("metal", "cc");
@@ -38,8 +40,16 @@ fn main() {
 fn run_bindgen() {
     bindgen::Builder::default()
         .header("shaders/src/shaders.cc")
-        .clang_args(&["-DNOT_BUILDING_AS_MSL", "-DDOING_RUST_BINDGEN", "-x", "c++", "-std=c++14"])
-        .default_enum_style(EnumVariation::Rust { non_exhaustive: false })
+        .clang_args(&[
+            "-DNOT_BUILDING_AS_MSL",
+            "-DDOING_RUST_BINDGEN",
+            "-x",
+            "c++",
+            "-std=c++14",
+        ])
+        .default_enum_style(EnumVariation::Rust {
+            non_exhaustive: false,
+        })
         .blocklist_type("float4")
         .blocklist_type("float4x4")
         .blocklist_type("float3")
@@ -50,13 +60,17 @@ fn run_bindgen() {
         .unwrap();
 }
 
-
 /// Compiles the shaders xcode project into a .metallib file.
-fn build_as_msl(){
-    let shaders = Command::new("xcodebuild").arg("build").current_dir("shaders").status();
+fn build_as_msl() {
+    let shaders = Command::new("xcodebuild")
+        .arg("build")
+        .current_dir("shaders")
+        .status();
     match shaders {
-        Ok(s) => if !s.success() {
-            panic!("xcodebuild failed with {s}.");
+        Ok(s) => {
+            if !s.success() {
+                panic!("xcodebuild failed with {s}.");
+            }
         }
         Err(e) => {
             panic!("Failed to run xcodebuild: {e}. Install the Xcode Command Line Tools.");
@@ -64,11 +78,15 @@ fn build_as_msl(){
     }
 
     // Move it into the src directory so I can use include_bytes.
-    fs::copy("shaders/build/Release/shaders.metallib", "src/bin/shaders.metallib").unwrap();
+    fs::copy(
+        "shaders/build/Release/shaders.metallib",
+        "src/bin/shaders.metallib",
+    )
+    .unwrap();
 }
 
 /// Compile the metal code as c++ so rust code can call it on the cpu for debugging.
-fn build_as_cpp(){
+fn build_as_cpp() {
     cc::Build::new()
         .define("NOT_BUILDING_AS_MSL", None)
         .cpp(true)
@@ -77,22 +95,22 @@ fn build_as_cpp(){
         .compile("shaders");
 }
 
-fn cargo_watch_changes(){
+fn cargo_watch_changes() {
     println!("cargo:rerun-if-changed=src");
 
     // List files individually because changing extensions counts as modifying the dir.
     fs::read_dir(SHADERS_SRC)
         .unwrap()
-        .map(|p| { p.unwrap().path() })
+        .map(|p| p.unwrap().path())
         .for_each(|p| {
             println!("cargo:rerun-if-changed={}", p.to_str().unwrap());
         });
 }
 
-fn cc_src_files() -> impl Iterator<Item=PathBuf> {
+fn cc_src_files() -> impl Iterator<Item = PathBuf> {
     fs::read_dir(SHADERS_SRC)
         .unwrap()
-        .map(|p| { p.unwrap().path() })
+        .map(|p| p.unwrap().path())
         .filter(|p| {
             let e = p.extension().unwrap();
             e != "h" && e != "md"

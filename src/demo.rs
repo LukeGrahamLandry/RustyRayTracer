@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use crate::shader_types::{Camera, PointLight, Shape, ShapeType, World};
 
-use glam::{vec3, vec4, Mat4, Vec3A, vec3a};
+use glam::{vec3, vec3a, vec4, Mat4, Vec3A};
 
 pub fn chapter6() -> World {
     let mut world = base_world();
@@ -29,14 +29,18 @@ pub fn chapter11() -> World {
     world.add_shape(big);
 
     let mut small = glass_sphere();
-    small.set_transform(Mat4::from_translation(vec3(-0.5, 1.0, 0.5)) * Mat4::from_scale(vec3(0.5, 0.5, 0.5)));
+    small.set_transform(
+        Mat4::from_translation(vec3(-0.5, 1.0, 0.5)) * Mat4::from_scale(vec3(0.5, 0.5, 0.5)),
+    );
     small.material.diffuse = 0.2;
     small.material.ambient = 0.01;
     world.add_shape(small);
 
     let mut back = ShapeType::Sphere.create();
     back.material.colour = vec3a(0.9, 0.1, 0.1);
-    back.set_transform(Mat4::from_translation(vec3(-0.5, 1.0, 1.5)) * Mat4::from_scale(vec3(0.5, 0.5, 0.5)));
+    back.set_transform(
+        Mat4::from_translation(vec3(-0.5, 1.0, 1.5)) * Mat4::from_scale(vec3(0.5, 0.5, 0.5)),
+    );
     world.add_shape(back);
 
     let mut floor = ShapeType::Sphere.create();
@@ -115,7 +119,7 @@ fn base_world() -> World {
     world
 }
 
-fn add_three_spheres(world: &mut World){
+fn add_three_spheres(world: &mut World) {
     let mut middle = ShapeType::Sphere.create();
     middle.set_transform(Mat4::from_translation(vec3(-0.5, 1.0, 0.5)));
     middle.material.colour = Vec3A::new(0.1, 1.0, 0.5);

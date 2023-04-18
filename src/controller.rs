@@ -1,7 +1,7 @@
-use glam::{Mat4, Vec2, vec3, Vec3};
-use winit::event::{KeyboardInput, VirtualKeyCode};
-use winit::event::ElementState;
 use crate::shader_types::Camera;
+use glam::{vec3, Mat4, Vec2, Vec3};
+use winit::event::ElementState;
+use winit::event::{KeyboardInput, VirtualKeyCode};
 
 #[derive(Default)]
 pub struct CameraController {
@@ -11,7 +11,7 @@ pub struct CameraController {
     back: bool,
     up: bool,
     down: bool,
-    rotation: Vec2
+    rotation: Vec2,
 }
 
 const MOVE_SPEED: f32 = 150.0;
@@ -47,11 +47,15 @@ impl CameraController {
         self.rotation.y += delta_mouse.1 as f32;
     }
 
-    pub fn update(&mut self, camera: &mut Camera, dt: f32){
+    pub fn update(&mut self, camera: &mut Camera, dt: f32) {
         let last_matrix = camera.get_transform();
         let (scale, rotation, mut translation) = last_matrix.to_scale_rotation_translation();
         translation += self.direction() * dt * MOVE_SPEED;
-        camera.set_transform(Mat4::from_scale_rotation_translation(scale, rotation, translation));
+        camera.set_transform(Mat4::from_scale_rotation_translation(
+            scale,
+            rotation,
+            translation,
+        ));
         self.rotation = Vec2::ZERO;
     }
 
@@ -59,7 +63,7 @@ impl CameraController {
         vec3(
             numberify(self.right, self.left),
             numberify(self.down, self.up),
-            numberify(self.forward, self.back)
+            numberify(self.forward, self.back),
         )
     }
 }

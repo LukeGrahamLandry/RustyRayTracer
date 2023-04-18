@@ -147,5 +147,3 @@ float4 zero_vec(){
 float4 point(float x, float y, float z){
     return {x, y, z, 1.0};
 }
-
-

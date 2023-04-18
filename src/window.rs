@@ -1,16 +1,16 @@
 use std::time::Instant;
 
-use winit::{
-    event::{Event, WindowEvent},
-    event_loop::ControlFlow,
-};
+use crate::controller::CameraController;
+use crate::demo::*;
+use crate::shader_types::World;
 use winit::dpi::LogicalSize;
 use winit::event::{DeviceEvent, ElementState, VirtualKeyCode};
 use winit::event_loop::EventLoop;
 use winit::window::Window;
-use crate::controller::CameraController;
-use crate::demo::*;
-use crate::shader_types::World;
+use winit::{
+    event::{Event, WindowEvent},
+    event_loop::ControlFlow,
+};
 
 pub trait RenderStrategy: Sized + 'static {
     fn new(app: &AppState) -> Self;
@@ -30,13 +30,15 @@ pub struct AppState {
     pub window: Window,
     pub world: World,
     timer: FrameTimer,
-    controller: CameraController
+    controller: CameraController,
 }
 
 /// All the logic for creating a window and handling events that can be shared between gpu and cpu renderers.
 impl AppState {
     pub fn new() -> (AppState, EventLoop<()>) {
-        println!("Use the number keys to switch between included scenes. The window can be resized.");
+        println!(
+            "Use the number keys to switch between included scenes. The window can be resized."
+        );
         let world = chapter7();
         let event_loop = winit::event_loop::EventLoop::new();
         let size = LogicalSize::new(world.camera.size().0, world.camera.size().1);
@@ -47,12 +49,15 @@ impl AppState {
             .build(&event_loop)
             .unwrap();
 
-        (AppState {
-            window,
-            world,
-            timer: FrameTimer::new(),
-            controller: CameraController::default()
-        }, event_loop)
+        (
+            AppState {
+                window,
+                world,
+                timer: FrameTimer::new(),
+                controller: CameraController::default(),
+            },
+            event_loop,
+        )
     }
 
     pub fn run<T: RenderStrategy>(mut self, mut renderer: T, event_loop: EventLoop<()>) {
@@ -66,15 +71,17 @@ impl AppState {
                         if input.state == ElementState::Pressed {
                             match input.virtual_keycode {
                                 Some(VirtualKeyCode::Escape) => *control_flow = ControlFlow::Exit,
-                                key => if let Some(w) = preset_world(key) {
-                                    println!("Switch scene.");  // why tf am i at 10 levels of indentation
-                                    self.world = w;
-                                    self.resize_camera();
-                                    renderer.world_changed(&self);
+                                key => {
+                                    if let Some(w) = preset_world(key) {
+                                        println!("Switch scene."); // why tf am i at 10 levels of indentation
+                                        self.world = w;
+                                        self.resize_camera();
+                                        renderer.world_changed(&self);
+                                    }
                                 }
                             }
                         }
-                    },
+                    }
                     WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
                     WindowEvent::Resized(_) => {
                         renderer.resized(self.resize_camera());
@@ -82,14 +89,20 @@ impl AppState {
                     _ => (),
                 },
                 // Nested destructuring, my beloved
-                Event::DeviceEvent { event: DeviceEvent::MouseMotion {delta, ..}, ..} => {
+                Event::DeviceEvent {
+                    event: DeviceEvent::MouseMotion { delta, .. },
+                    ..
+                } => {
                     self.controller.mouse_moved(delta);
-                },
+                }
                 Event::MainEventsCleared => {
                     self.window.request_redraw();
                 }
                 Event::RedrawRequested(_) => {
-                    self.controller.update(&mut self.world.camera, self.timer.last.elapsed().as_secs_f32());
+                    self.controller.update(
+                        &mut self.world.camera,
+                        self.timer.last.elapsed().as_secs_f32(),
+                    );
                     renderer.render(&self);
                     self.timer.update();
                 }
@@ -98,9 +111,12 @@ impl AppState {
         });
     }
 
-    fn resize_camera(&mut self) -> LogicalSize<u32>{
-        let size: LogicalSize<u32> = LogicalSize::from_physical(self.window.inner_size(), self.window.scale_factor());
-        self.world.camera.resize(size.width as usize, size.height as usize);
+    fn resize_camera(&mut self) -> LogicalSize<u32> {
+        let size: LogicalSize<u32> =
+            LogicalSize::from_physical(self.window.inner_size(), self.window.scale_factor());
+        self.world
+            .camera
+            .resize(size.width as usize, size.height as usize);
         println!("Resolution: {}x{}", size.width, size.height);
         size
     }
@@ -108,18 +124,10 @@ impl AppState {
 
 fn preset_world(key: Option<VirtualKeyCode>) -> Option<World> {
     match key {
-        Some(VirtualKeyCode::Key1) => {
-            Some(chapter7())
-        },
-        Some(VirtualKeyCode::Key2) => {
-            Some(chapter9())
-        },
-        Some(VirtualKeyCode::Key3) => {
-            Some(chapter11())
-        },
-        Some(VirtualKeyCode::Key4) => {
-            Some(chapter6())
-        }
+        Some(VirtualKeyCode::Key1) => Some(chapter7()),
+        Some(VirtualKeyCode::Key2) => Some(chapter9()),
+        Some(VirtualKeyCode::Key3) => Some(chapter11()),
+        Some(VirtualKeyCode::Key4) => Some(chapter6()),
         _ => None,
     }
 }
@@ -139,7 +147,7 @@ impl FrameTimer {
         }
     }
 
-    pub fn update(&mut self){
+    pub fn update(&mut self) {
         let now = Instant::now();
         self.micro_seconds += self.last.elapsed().as_micros();
         self.last = now;
@@ -154,7 +162,13 @@ impl FrameTimer {
         let seconds = self.micro_seconds as f64 / 1000000.0;
         let frame_time_ms = (self.micro_seconds as f64 / self.frame_count as f64).round() / 1000.0;
         let fps = self.frame_count as f64 / seconds;
-        println!("{} seconds; {} frames; {} fps; {} ms per frame;", seconds, self.frame_count, fps.round(), frame_time_ms);
+        println!(
+            "{} seconds; {} frames; {} fps; {} ms per frame;",
+            seconds,
+            self.frame_count,
+            fps.round(),
+            frame_time_ms
+        );
         self.micro_seconds = 0;
         self.frame_count = 0;
     }

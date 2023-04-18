@@ -1,9 +1,9 @@
-use glam::{Vec3A, vec4};
+use glam::{vec4, Vec3A};
 use rayon::iter::IntoParallelIterator;
+use rayon::prelude::*;
+use raytracer::window::{AppState, RenderStrategy};
 use softbuffer::GraphicsContext;
 use winit::dpi::LogicalSize;
-use raytracer::window::{AppState, RenderStrategy};
-use rayon::prelude::*;
 
 fn main() {
     CpuState::run();
@@ -11,7 +11,7 @@ fn main() {
 
 struct CpuState {
     graphics_context: GraphicsContext,
-    screen_buffer: Vec<u32>
+    screen_buffer: Vec<u32>,
 }
 
 impl RenderStrategy for CpuState {
@@ -19,13 +19,16 @@ impl RenderStrategy for CpuState {
         println!("Shaders will (slowly) run on the CPU. Hope you compiled with --release.");
         CpuState {
             graphics_context: unsafe { GraphicsContext::new(&app.window, &app.window) }.unwrap(),
-            screen_buffer: vec![]
+            screen_buffer: vec![],
         }
     }
 
     fn render(&mut self, app: &AppState) {
         // TODO: this will be slower depending on scale factor cause its doing extra work instead of downscaling.
-        let (width, height) = (app.window.inner_size().width, app.window.inner_size().height);
+        let (width, height) = (
+            app.window.inner_size().width,
+            app.window.inner_size().height,
+        );
         let world = &app.world.view();
         let scale = app.window.scale_factor() as f32;
 
@@ -43,7 +46,8 @@ impl RenderStrategy for CpuState {
             })
             .collect_into_vec(&mut self.screen_buffer);
 
-        self.graphics_context.set_buffer(&self.screen_buffer, width as u16, height as u16);
+        self.graphics_context
+            .set_buffer(&self.screen_buffer, width as u16, height as u16);
     }
 
     fn resized(&mut self, _size: LogicalSize<u32>) {

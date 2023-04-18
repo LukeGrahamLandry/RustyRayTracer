@@ -1,18 +1,18 @@
 extern crate objc;
 extern crate raytracer;
 
-use std::mem;
 use std::ffi::c_void;
+use std::mem;
 
+use cocoa::{appkit::NSView, base::id as cocoa_id};
+use core_graphics_types::geometry::CGSize;
 use metal::*;
+use objc::{rc::autoreleasepool, runtime::YES};
 use winit::dpi::LogicalSize;
 use winit::platform::macos::WindowExtMacOS;
-use core_graphics_types::geometry::CGSize;
-use objc::{rc::autoreleasepool, runtime::YES};
-use cocoa::{appkit::NSView, base::id as cocoa_id};
 
-use raytracer::window::{RenderStrategy, AppState};
 use raytracer::shader_types::ShaderInputs;
+use raytracer::window::{AppState, RenderStrategy};
 
 pub fn main() {
     GpuState::run();
@@ -30,7 +30,8 @@ struct GpuState {
 impl RenderStrategy for GpuState {
     fn new(app: &AppState) -> GpuState {
         println!("Shaders will run on the GPU.");
-        let device = Device::system_default().expect("No device found. gpu_runner requires the Metal graphics API.");
+        let device = Device::system_default()
+            .expect("No device found. gpu_runner requires the Metal graphics API.");
         let layer = init_layer(&device, app);
         init_view(app, &layer);
         GpuState {
@@ -39,7 +40,7 @@ impl RenderStrategy for GpuState {
             command_queue: device.new_command_queue(),
             shapes_buffer: init_buffer(&device, app.world.get_shapes()),
             lights_buffer: init_buffer(&device, app.world.get_lights()),
-            device
+            device,
         }
     }
 
@@ -48,7 +49,8 @@ impl RenderStrategy for GpuState {
     }
 
     fn resized(&mut self, size: LogicalSize<u32>) {
-        self.layer.set_drawable_size(CGSize::new(size.width as f64, size.height as f64));
+        self.layer
+            .set_drawable_size(CGSize::new(size.width as f64, size.height as f64));
     }
 
     fn world_changed(&mut self, app: &AppState) {
@@ -70,12 +72,16 @@ impl GpuState {
         encoder.draw_primitives(MTLPrimitiveType::Triangle, 0, 3);
 
         encoder.end_encoding();
-        command_buffer.present_drawable(&drawable);
+        command_buffer.present_drawable(drawable);
         command_buffer.commit();
     }
 
     fn set_buffers(&self, app: &AppState, encoder: &RenderCommandEncoderRef) {
-        encoder.set_fragment_bytes(0, mem::size_of::<ShaderInputs>() as u64, ptr(&app.world.view().inputs));
+        encoder.set_fragment_bytes(
+            0,
+            mem::size_of::<ShaderInputs>() as u64,
+            ptr(&app.world.view().inputs),
+        );
         encoder.set_fragment_buffer(1, Some(&self.shapes_buffer), 0);
         encoder.set_fragment_buffer(2, Some(&self.lights_buffer), 0);
     }

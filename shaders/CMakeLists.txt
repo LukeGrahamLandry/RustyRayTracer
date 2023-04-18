@@ -23,4 +23,4 @@ add_executable(unused
         src/shapes.h
         src/world.cc
         src/world.h
-        src/material.cc src/la.h)
+        src/material.cc src/la.h src/la.cc)

@@ -14,11 +14,10 @@
 // Used for preventing shadow acne.
 #define EPSILON 0.01
 
-#define unreachable() __builtin_unreachable();
+#include "la.h"
 
 // NOT_BUILDING_AS_MSL is set by build.rs when building as c++ for cpu_runner.
 #ifdef NOT_BUILDING_AS_MSL
-#include "la.h"
 
 // These are address qualifiers in MSL. Define them as macros that expand to an empty string.
 // That's all it takes to compile it as c++.
@@ -32,9 +31,5 @@
 using namespace metal;
 
 #endif
-#endif
 
-#define Point(x, y, z) float4(x, y, z, 1.0)
-#define Vector(x, y, z) float4(x, y, z, 0.0)
-#define BLACK() float3(0.0, 0.0, 0.0)
-#define ZERO_VEC() float4(0.0, 0.0, 0.0, 0.0)
+#endif

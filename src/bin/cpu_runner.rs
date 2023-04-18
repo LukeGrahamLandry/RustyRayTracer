@@ -1,8 +1,7 @@
-use glam::{Vec3A, Vec4, vec4};
+use glam::{Vec3A, vec4};
 use rayon::iter::IntoParallelIterator;
 use softbuffer::GraphicsContext;
 use winit::dpi::LogicalSize;
-use raytracer::shader_types::WorldView;
 use raytracer::window::{AppState, RenderStrategy};
 use rayon::prelude::*;
 

@@ -9,11 +9,11 @@ Ray Camera::ray_for_pixel(float x, float y) const constant {
     float object_y = half_height - (((y + 0.5f)) * pixel_size);
 
     // Position of the pixel in the camera's object space.
-    float4 pixel_object_point = Point(object_x, object_y, -1);
+    float4 pixel_object_point = point(object_x, object_y, -1);
 
     // Transform to world space.
     float4 pixel_world_point = transform_inverse * pixel_object_point;
-    float4 camera_world_point = transform_inverse * Point(0, 0, 0);
+    float4 camera_world_point = transform_inverse * point(0, 0, 0);
     float4 ray_direction = normalize(pixel_world_point - camera_world_point);
     return Ray(camera_world_point, ray_direction);
 };
@@ -58,7 +58,7 @@ Intersection Intersections::get_hit() const {
     }
     
     // check has_hit first
-    unreachable();
+    __builtin_unreachable();
 };
 
 

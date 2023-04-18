@@ -8,7 +8,13 @@ default-run="gpu_runner"
 metal = "0.24.0"
 winit = "0.28.3"
 cocoa = "0.24.0"
-glam = "0.23.0"
+# TODO:
+#       Revisit this at some point but for now, their simd doesn't seem to support aarch anyway and
+#       I need to be able to pass data to the c++ code which doesn't use simd stuff.
+#       I'm afaid of calling convention differences that would make cpu_runner not work on x86,
+#       because glam would enable simd but my implementations in la.cc wouldn't.
+#       This doesn't effect the performance I really care on the GPU side.
+glam = {version="0.23.0", features=["scalar-math"]}
 core-graphics-types = "0.1"
 objc = "0.2.7"
 rayon="1.7.0"
@@ -17,4 +23,3 @@ softbuffer = "0.2.0"
 [build-dependencies]
 cc = "1.0.79"
 bindgen = "0.65.1"
-cbindgen = "0.24.3"

@@ -12,6 +12,7 @@
 		A394FFF029E4A78F00D58DAF /* world.metal in Sources */ = {isa = PBXBuildFile; fileRef = A394FFEF29E4A78F00D58DAF /* world.metal */; };
 		A394FFF229E4AA9B00D58DAF /* shapes.metal in Sources */ = {isa = PBXBuildFile; fileRef = A394FFF129E4AA9B00D58DAF /* shapes.metal */; };
 		A394FFF829E4ABC200D58DAF /* ray.metal in Sources */ = {isa = PBXBuildFile; fileRef = A394FFF729E4ABC200D58DAF /* ray.metal */; };
+		A3FED71229EE6265009E2369 /* la.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3FED71129EE6265009E2369 /* la.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,12 +27,16 @@
 		A394FFF729E4ABC200D58DAF /* ray.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ray.metal; sourceTree = "<group>"; };
 		A394FFF929E4AC0B00D58DAF /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		A394FFFA29E4AC4300D58DAF /* ray.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ray.h; sourceTree = "<group>"; };
+		A3FED71029EE6265009E2369 /* la.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = la.h; path = src/la.h; sourceTree = "<group>"; };
+		A3FED71129EE6265009E2369 /* la.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = la.metal; path = src/la.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		A394FFD929E3D08400D58DAF = {
 			isa = PBXGroup;
 			children = (
+				A3FED71029EE6265009E2369 /* la.h */,
+				A3FED71129EE6265009E2369 /* la.metal */,
 				A394FFE229E3D08400D58DAF /* src */,
 				A394FFE129E3D08400D58DAF /* Products */,
 			);
@@ -119,6 +124,7 @@
 			files = (
 				A394FFF829E4ABC200D58DAF /* ray.metal in Sources */,
 				A394FFF029E4A78F00D58DAF /* world.metal in Sources */,
+				A3FED71229EE6265009E2369 /* la.metal in Sources */,
 				A394FFF229E4AA9B00D58DAF /* shapes.metal in Sources */,
 				A394FFED29E48C0D00D58DAF /* material.metal in Sources */,
 				A394FFE429E3D08400D58DAF /* shaders.metal in Sources */,

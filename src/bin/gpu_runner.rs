@@ -30,7 +30,7 @@ struct GpuState {
 impl RenderStrategy for GpuState {
     fn new(app: &AppState) -> GpuState {
         println!("Shaders will run on the GPU.");
-        let device = Device::system_default().expect("No metal device found.");
+        let device = Device::system_default().expect("No device found. gpu_runner requires the Metal graphics API.");
         let layer = init_layer(&device, app);
         init_view(app, &layer);
         GpuState {
@@ -61,9 +61,9 @@ impl GpuState {
     fn do_render(&mut self, app: &AppState) {
         let drawable = self.layer.next_drawable().unwrap();
         let pass_descriptor = RenderPassDescriptor::new();
-        init_pass(&pass_descriptor, drawable.texture());
+        init_pass(pass_descriptor, drawable.texture());
         let command_buffer = self.command_queue.new_command_buffer();
-        let encoder = command_buffer.new_render_command_encoder(&pass_descriptor);
+        let encoder = command_buffer.new_render_command_encoder(pass_descriptor);
 
         encoder.set_render_pipeline_state(&self.pipeline_state);
         self.set_buffers(app, encoder);

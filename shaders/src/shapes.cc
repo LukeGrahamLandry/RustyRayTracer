@@ -6,11 +6,11 @@ float4 Shape::normal_at(float4 world_pos) const {
     
     switch (shape) {
         case Sphere: {
-            object_space_normal = object_space_point - Point(0, 0, 0);
+            object_space_normal = object_space_point - point(0, 0, 0);
             break;
         }
         case Plane: {
-            object_space_normal = Vector(0.0, 1.0, 0.0);
+            object_space_normal = point(0.0, 1.0, 0.0);
             break;
         }
     }
@@ -31,12 +31,10 @@ void Shape::intersect(const thread Ray& world_ray, thread Intersections& hits) c
             return local_intersect_plane(object_space_ray, hits);
         }
     }
-
-    unreachable();
 }
 
 void Shape::local_intersect_sphere(const thread Ray& ray, thread Intersections& hits) const {
-    float4 sphere_to_ray = ray.origin - Point(0, 0, 0);
+    float4 sphere_to_ray = ray.origin - point(0, 0, 0);
     float a = dot(ray.direction, ray.direction);
     float b = 2 * dot(ray.direction, sphere_to_ray);
     float c = dot(sphere_to_ray, sphere_to_ray) - 1;

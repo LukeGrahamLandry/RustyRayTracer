@@ -1,11 +1,10 @@
-use glam::{Mat4, Vec3A, Vec4};
-
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+use glam::{Mat4, Vec3A};
+pub use crate::bindings::*;
 
 #[derive(Default)]
 pub struct World {
-    shapes: Vec<Shape>,
-    lights: Vec<PointLight>,
+    pub shapes: Vec<Shape>,
+    pub lights: Vec<PointLight>,
     pub camera: Camera,
 }
 
@@ -50,6 +49,8 @@ impl World {
     }
 }
 
+// Fight me clippy. There's no universe where (0.0..=1.0).contains(&x) is better.
+#[allow(clippy::manual_range_contains)]
 fn is_frac(x: f32) -> bool {
     0.0 <= x && x <= 1.0
 }
@@ -74,8 +75,10 @@ impl Camera {
     }
 
     pub fn new(hsize: usize, vsize: usize, field_of_view: f32) -> Camera {
-        let mut camera = Camera::default();
-        camera.field_of_view = field_of_view;
+        let mut camera = Camera {
+            field_of_view,
+            ..Default::default()
+        };
         camera.set_transform(Mat4::IDENTITY);
         camera.resize(hsize, vsize);
         camera
@@ -140,17 +143,11 @@ impl Default for Material {
     }
 }
 
-impl Default for ShapeType {
-    fn default() -> Self {
-        ShapeType::Sphere
-    }
-}
-
-impl Default for Shape {
-    fn default() -> Self {
+impl ShapeType {
+    pub(crate) fn create(self) -> Shape {
         Shape {
             transform_inverse: Default::default(),
-            shape: Default::default(),
+            shape: self,
             index: 0,
             __bindgen_padding_0: 0,
             material: Default::default(),
@@ -158,33 +155,16 @@ impl Default for Shape {
     }
 }
 
+impl Copy for Material {}
 impl Clone for Material {
     fn clone(&self) -> Self {
-        Material {
-            colour: self.colour,
-            ambient: self.ambient,
-            diffuse: self.diffuse,
-            specular: self.specular,
-            shininess: self.shininess,
-            reflective: self.reflective,
-            transparency: self.transparency,
-            refractive_index: self.refractive_index,
-        }
-    }
-}
-
-impl Clone for Camera {
-    fn clone(&self) -> Self {
-        Camera {
-            transform_inverse: self.transform_inverse,
-            pixel_size: self.pixel_size,
-            half_width: self.half_width,
-            half_height: self.half_height,
-            hsize: self.hsize,
-            vsize: self.vsize,
-            field_of_view: self.field_of_view,
-        }
+        *self
     }
 }
 
 impl Copy for Camera {}
+impl Clone for Camera {
+    fn clone(&self) -> Self {
+        *self
+    }
+}

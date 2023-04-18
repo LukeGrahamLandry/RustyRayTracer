@@ -19,6 +19,7 @@ pub trait RenderStrategy: Sized + 'static {
     fn world_changed(&mut self, app: &AppState);
 
     fn run() {
+        println!("Start.");
         let (app, event_loop) = AppState::new();
         let renderer = Self::new(&app);
         app.run(renderer, event_loop);
@@ -36,9 +37,9 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> (AppState, EventLoop<()>) {
         println!("Use the number keys to switch between included scenes. The window can be resized.");
-        let world = chapter6();
+        let world = chapter7();
         let event_loop = winit::event_loop::EventLoop::new();
-        let size = winit::dpi::LogicalSize::new(world.camera.size().0, world.camera.size().1);
+        let size = LogicalSize::new(world.camera.size().0, world.camera.size().1);
 
         let window = winit::window::WindowBuilder::new()
             .with_inner_size(size)
@@ -65,14 +66,11 @@ impl AppState {
                         if input.state == ElementState::Pressed {
                             match input.virtual_keycode {
                                 Some(VirtualKeyCode::Escape) => *control_flow = ControlFlow::Exit,
-                                key => match preset_world(key) {
-                                    Some(w) => {
-                                        println!("Switch scene.");
-                                        self.world = w;
-                                        self.resize_camera();
-                                        renderer.world_changed(&mut self);
-                                    }
-                                    None => {}
+                                key => if let Some(w) = preset_world(key) {
+                                    println!("Switch scene.");  // why tf am i at 10 levels of indentation
+                                    self.world = w;
+                                    self.resize_camera();
+                                    renderer.world_changed(&self);
                                 }
                             }
                         }
@@ -83,20 +81,16 @@ impl AppState {
                     }
                     _ => (),
                 },
-                Event::DeviceEvent { event, ..} => {
-                    match event {
-                        DeviceEvent::MouseMotion {delta, ..} => {
-                            self.controller.mouse_moved(delta);
-                        }
-                        _ => {}
-                    }
+                // Nested destructuring, my beloved
+                Event::DeviceEvent { event: DeviceEvent::MouseMotion {delta, ..}, ..} => {
+                    self.controller.mouse_moved(delta);
                 },
                 Event::MainEventsCleared => {
                     self.window.request_redraw();
                 }
                 Event::RedrawRequested(_) => {
                     self.controller.update(&mut self.world.camera, self.timer.last.elapsed().as_secs_f32());
-                    renderer.render(&mut self);
+                    renderer.render(&self);
                     self.timer.update();
                 }
                 _ => {}

@@ -15,10 +15,10 @@ pub struct CameraController {
 }
 
 const MOVE_SPEED: f32 = 150.0;
-const ROT_SPEED: f32 = 0.05;
 
 impl CameraController {
     pub fn keyboard_event(&mut self, event: KeyboardInput) {
+        // This could be a hash map but this is a heap-less home.
         match event.virtual_keycode {
             Some(VirtualKeyCode::W) => {
                 self.forward = event.state == ElementState::Pressed;

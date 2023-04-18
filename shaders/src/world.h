@@ -18,15 +18,15 @@ typedef struct {
 
 typedef struct Comps {
     float t;
+    float n1;
+    float n2;
+    bool inside;
     Material material;
     float4 point;
     float4 eyev;
     float4 normalv;
-    bool inside;
     float4 over_point;
     float4 reflectv;
-    float n1;
-    float n2;
     float4 under_point;
 } Comps;
 

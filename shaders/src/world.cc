@@ -3,7 +3,7 @@
 // Since Metal doesn't allow recursion in fragment shaders, this iteratively processes a queue of rays.
 // When a new ray needs to be spawned for a reflection or refraction, it just gets pushed to the queue.
 float3 WorldView::colour_at(const thread Ray& first_ray) const {
-    float3 colour = BLACK();
+    float3 colour = black();
     Intersections hits;
     RayQueue queue;
     queue.push(first_ray, 1.0);
@@ -49,7 +49,7 @@ void WorldView::intersect(const thread Ray& ray, thread Intersections& hits) con
 }
 
 float3 WorldView::shade_hit(const thread Comps& comps) const {
-    float3 colour = BLACK();
+    float3 colour = black();
     for (uint32_t i=0;i<inputs.light_count;i++){
         PointLight light = lights[i];
         bool shadowed = is_shadowed(light.position, comps.over_point);

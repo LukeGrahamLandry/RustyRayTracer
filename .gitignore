@@ -8,3 +8,4 @@
 shaders/build/**
 cmake-build-debug
 *.metallib
+src/bindings.rs

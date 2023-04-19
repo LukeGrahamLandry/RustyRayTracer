@@ -1,12 +1,18 @@
+use std::collections::HashMap;
 use glam::{Mat4, Vec3, vec3, Vec3A, vec3a, Vec4, vec4};
 use yaml_rust::{ScanError, Yaml, YamlLoader};
 use yaml_rust::yaml::{Array, Hash};
-use crate::bindings::{Camera, PatternType, ShapeType};
+use crate::bindings::{Camera, PatternType, Shape, ShapeType};
 use crate::scene::SceneParseErr::ScanFailed;
 use crate::shader_types::{PointLight, World};
 
+/// Switch between these at runtime with the number keys.
 pub const SCENE_FILES: &[&str] = &[
-    include_str!("../scenes/metal.yml")
+    include_str!("../scenes/three-spheres.yml"),
+    include_str!("../scenes/puppets.yml"),
+    include_str!("../scenes/metal.yml"),
+    include_str!("../scenes/reflect-refract.yml"),
+    include_str!("../scenes/air-bubble.yml")
 ];
 
 #[derive(Debug)]
@@ -21,8 +27,13 @@ pub enum SceneParseErr {
 pub fn load_scene(definition: &str) -> Result<World, SceneParseErr> {
     let data = YamlLoader::load_from_str(definition)?;
     let mut world = World::default();
+    let mut templates = HashMap::<&str, Hash>::new();
 
-    let add = &Yaml::String(String::from("add"));
+    let add_key = &Yaml::String(String::from("add"));
+    let define_key = &Yaml::String(String::from("define"));
+    let value_key = &Yaml::String(String::from("value"));
+    let extend_key = &Yaml::String(String::from("extend"));
+
     match data[0].as_vec() {
         None => {
             return Err(SceneParseErr::InvalidData);
@@ -34,13 +45,39 @@ pub fn load_scene(definition: &str) -> Result<World, SceneParseErr> {
                     Some(e) => e
                 };
 
-                let obj_type = entry.get(add).unwrap().as_str().unwrap();
-                match obj_type {
-                    "camera" => add_camera(entry, &mut world),
-                    "light" => add_light(entry, &mut world),
-                    "plane" => add_shape(entry, &mut world, ShapeType::Plane),
-                    "sphere" => add_shape(entry, &mut world, ShapeType::Sphere),
-                    &_ => {}
+                match entry.get(add_key) {
+                    None => {}
+                    Some(obj_type) => {
+                        let obj_type = obj_type.as_str().unwrap();
+                        match obj_type {
+                            "camera" => add_camera(entry, &mut world),
+                            "light" => add_light(entry, &mut world),
+                            "plane" => add_shape(entry, &mut world, ShapeType::Plane, &templates),
+                            "sphere" => add_shape(entry, &mut world, ShapeType::Sphere, &templates),
+                            &_ => {}
+                        }
+                    }
+                }
+
+                match entry.get(define_key) {
+                    None => {}
+                    Some(name) => {
+                        let name = name.as_str().unwrap();
+                        let data = entry.get(value_key).unwrap().as_hash().unwrap();
+                        match entry.get(extend_key) {
+                            None => {
+                                templates.insert(name, data.clone());
+                            }
+                            Some(extend) => {
+                                let extend = extend.as_str().unwrap();
+                                let mut prev = templates.get(extend).unwrap().clone();
+                                for (key, value) in data {
+                                    prev.insert(key.clone(), value.clone());
+                                }
+                                templates.insert(name, prev);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -54,37 +91,46 @@ pub fn load_scene(definition: &str) -> Result<World, SceneParseErr> {
 
 }
 
-fn add_shape(entry: &Hash, world: &mut World, shape: ShapeType) {
+fn add_shape(entry: &Hash, world: &mut World, shape: ShapeType, templates: &HashMap<&str, Hash>) {
     let mut shape = shape.create();
+    if let Some(m) = entry.get(&Yaml::String(String::from("material"))) {
+        let m = match m {
+            Yaml::Hash(m) => m,
+            Yaml::String(name) => match templates.get(name.as_str()) {
+                None => panic!("Undefined material name: {:?}", m),
+                Some(m) => m,
+            },
+            _ => panic!("Invalid material value: {:?}", m),
+        };
 
-    match entry.get(&Yaml::String(String::from("material"))) {
-        None => {}
-        Some(m) => {
-            let m = m.as_hash().unwrap();
-            m.if_f32("diffuse", |v| shape.material.diffuse = v);
-            m.if_f32("ambient", |v| shape.material.ambient = v);
-            m.if_f32("specular", |v| shape.material.specular = v);
-            m.if_f32("shininess", |v| shape.material.shininess = v);
-            m.if_f32("reflective", |v| shape.material.reflective = v);
-            m.if_colour("color", |v| shape.material.colour = v);
-            match m.get(&Yaml::String(String::from("pattern"))) {
-                None => {}
-                Some(p) => {
-                    let p = p.as_hash().unwrap();
-                    let key = &Yaml::String(String::from("colors"));
-                    let data = p.get(key).unwrap().as_vec().unwrap();
-                    let mut pattern = get_pattern_type(&p.get_str("type")).create();
-                    pattern.a = to_colour(data[0].as_vec().unwrap());
-                    pattern.b = to_colour(data[1].as_vec().unwrap());
-                    p.if_transform(|t| pattern.set_transform(t));
-                    shape.material.pattern_index = world.add_pattern(pattern);
-                }
-            }
-        }
+        parse_material(m, world, &mut shape);
     }
 
     entry.if_transform(|t| shape.set_transform(t));
     world.add_shape(shape);
+}
+
+fn parse_material(m_obj: &Hash, world: &mut World, shape: &mut Shape) {
+    let pattern_key = &Yaml::String(String::from("pattern"));
+    m_obj.if_f32("diffuse", |v| shape.material.diffuse = v);
+    m_obj.if_f32("ambient", |v| shape.material.ambient = v);
+    m_obj.if_f32("specular", |v| shape.material.specular = v);
+    m_obj.if_f32("shininess", |v| shape.material.shininess = v);
+    m_obj.if_f32("reflective", |v| shape.material.reflective = v);
+    m_obj.if_colour("color", |v| shape.material.colour = v);
+    match m_obj.get(pattern_key) {
+        None => {}
+        Some(p) => {
+            let p = p.as_hash().unwrap();
+            let key = &Yaml::String(String::from("colors"));
+            let data = p.get(key).unwrap().as_vec().unwrap();
+            let mut pattern = get_pattern_type(&p.get_str("type")).create();
+            pattern.a = to_colour(data[0].as_vec().unwrap());
+            pattern.b = to_colour(data[1].as_vec().unwrap());
+            p.if_transform(|t| pattern.set_transform(t));
+            shape.material.pattern_index = world.add_pattern(pattern);
+        }
+    }
 }
 
 fn add_light(entry: &Hash, world: &mut World) {
@@ -197,6 +243,9 @@ fn to_mat(yaml: &Yaml) -> Mat4 {
     match kind {
         "translate" => Mat4::from_translation(offset_vec3(data)),
         "scale" => Mat4::from_scale(offset_vec3(data)),
+        "rotate-x" => Mat4::from_rotation_x(to_f32(&data[1])),
+        "rotate-y" => Mat4::from_rotation_y(to_f32(&data[1])),
+        "rotate-z" => Mat4::from_rotation_z(to_f32(&data[1])),
         &_ => panic!("Invalid transform {:?}", yaml),
     }
 }
@@ -215,6 +264,7 @@ fn maybe_f32(yaml: &Yaml) -> Option<f32> {
 
 fn get_pattern_type(name: &str) -> PatternType {
     match name {
+        "stripes" => PatternType::Stripes,
         "checkers" => PatternType::Checker,
         &_ => panic!("Invalid pattern type: {}", name),
     }

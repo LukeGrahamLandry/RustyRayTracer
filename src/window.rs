@@ -75,6 +75,8 @@ impl AppState {
                                 key => {
                                     if let Some(w) = preset_world(key) {
                                         println!("Switch scene."); // why tf am i at 10 levels of indentation
+                                        let size = LogicalSize::new(w.camera.hsize, w.camera.vsize);
+                                        self.window.set_inner_size(size);
                                         self.world = w;
                                         self.resize_camera();
                                         renderer.world_changed(&self);
@@ -124,14 +126,15 @@ impl AppState {
 }
 
 fn preset_world(key: Option<VirtualKeyCode>) -> Option<World> {
-    match key {
-        Some(VirtualKeyCode::Key1) => Some(chapter7()),
-        Some(VirtualKeyCode::Key2) => Some(chapter9()),
-        Some(VirtualKeyCode::Key3) => Some(chapter11()),
-        Some(VirtualKeyCode::Key4) => Some(chapter6()),
-        Some(VirtualKeyCode::Key5) => Some(chapter10()),
-        _ => None,
+    if let Some(k) = key{
+        let index = ((k as u32) - (VirtualKeyCode::Key1 as u32)) as usize;
+        // Can't have more than 10 presets because the next key in the enum is 'A' which I want to use for movement.
+        if index < SCENE_FILES.len() && index <= 10 {
+            return Some(load_scene(SCENE_FILES[index]).unwrap());
+        }
     }
+
+    None
 }
 
 pub struct FrameTimer {

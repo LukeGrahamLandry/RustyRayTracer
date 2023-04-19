@@ -1,3 +1,4 @@
+use std::{env, fs};
 use std::time::Instant;
 
 use crate::controller::CameraController;
@@ -40,7 +41,7 @@ impl AppState {
         println!(
             "Use the number keys to switch between included scenes. The window can be resized."
         );
-        let world = load_scene(SCENE_FILES[0]).unwrap();
+        let world = initial_world();
         let event_loop = winit::event_loop::EventLoop::new();
         let size = LogicalSize::new(world.camera.size().0, world.camera.size().1);
 
@@ -125,6 +126,18 @@ impl AppState {
     }
 }
 
+fn initial_world() -> World {
+    let args: Vec<String> = env::args().collect();
+    for name in args {
+        if let Ok(data) = fs::read_to_string(&name) {
+            if let Ok(world) = load_scene(&data) {
+                return world;
+            }
+        }
+    }
+
+    load_scene(SCENE_FILES[0]).unwrap()
+}
 fn preset_world(key: Option<VirtualKeyCode>) -> Option<World> {
     if let Some(k) = key{
         let index = ((k as u32) - (VirtualKeyCode::Key1 as u32)) as usize;

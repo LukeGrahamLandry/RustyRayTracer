@@ -18,6 +18,11 @@ typedef int uint32_t;
 float sqrt(float v);
 #endif
 
+struct alignas(8) float2 {
+    float x, y;
+    float2(float x, float y) : x{x}, y{y} {}
+};
+
 struct alignas(16) float4 {
     float x, y, z, w;
 
@@ -74,10 +79,14 @@ float4 reflect(float4 v, float4 n);
 
 float4x4 transpose(float4x4 m);
 
+float max3(float a, float b, float c);
+float min3(float a, float b, float c);
+
 #endif
 
 float3 black();
 float4 zero_vec();
 float4 point(float x, float y, float z);
+float4 vector(float x, float y, float z);
 
 #endif

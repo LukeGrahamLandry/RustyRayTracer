@@ -134,6 +134,15 @@ float4x4 transpose(float4x4 m) {
     return result;
 }
 
+
+float max3(float a, float b, float c) {
+    return fmax(a, fmin(b, c));
+}
+
+float min3(float a, float b, float c) {
+    return fmin(a, fmin(b, c));
+}
+
 #endif
 
 float3 black(){
@@ -146,4 +155,8 @@ float4 zero_vec(){
 
 float4 point(float x, float y, float z){
     return {x, y, z, 1.0};
+}
+
+float4 vector(float x, float y, float z){
+    return {x, y, z, 0.0};
 }

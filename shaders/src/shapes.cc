@@ -1,4 +1,5 @@
 #include "shapes.h"
+#include "common.h"
 
 float4 Shape::normal_at(float4 world_pos) const {
     float4 object_space_point = transform_inverse * world_pos;
@@ -10,7 +11,18 @@ float4 Shape::normal_at(float4 world_pos) const {
             break;
         }
         case Plane: {
-            object_space_normal = point(0.0, 1.0, 0.0);
+            object_space_normal = vector(0.0, 1.0, 0.0);
+            break;
+        }
+        case Cube: {
+            float maxc = max3(abs(object_space_point.x), abs(object_space_point.y), abs(object_space_point.z));
+            if (maxc == abs(object_space_point.x)) {
+                object_space_normal = vector(object_space_point.x, 0, 0);
+            } else if (maxc == abs(object_space_point.y)) {
+                object_space_normal = vector(0, object_space_point.y, 0);
+            } else {
+                object_space_normal = vector(0, 0, object_space_point.z);
+            }
             break;
         }
     }
@@ -29,6 +41,9 @@ void Shape::intersect(const thread Ray& world_ray, thread Intersections& hits) c
         }
         case Plane: {
             return local_intersect_plane(object_space_ray, hits);
+        }
+        case Cube: {
+            return local_intersect_cube(object_space_ray, hits);
         }
     }
 }
@@ -54,5 +69,39 @@ void Shape::local_intersect_plane(const thread Ray& ray, thread Intersections& h
     if (abs(ray.direction.y) > 0) {
         float t = -ray.origin.y / ray.direction.y;
         hits.add(t, index);
+    }
+}
+
+float2 check_axis(float origin, float direction){
+    float tmin_numerator = (-1 - origin);
+    float tmax_numerator = (1 - origin);
+    float tmin, tmax;
+    if (abs(direction) >= EPSILON){
+        tmin = tmin_numerator / direction;
+        tmax = tmax_numerator / direction;
+    } else {  // I think metal fast-math assumes no infinity
+        tmin = tmin_numerator * 999999999.0f;
+        tmax = tmax_numerator * 999999999.0f;
+    }
+
+    if (tmin > tmax)  {
+        return float2(tmax, tmin);
+    } else {
+        return float2(tmin, tmax);
+    }
+}
+
+
+void Shape::local_intersect_cube(const thread Ray& ray, thread Intersections& hits) const {
+    float2 x = check_axis(ray.origin.x, ray.direction.x);
+    float2 y = check_axis(ray.origin.y, ray.direction.y);
+    float2 z = check_axis(ray.origin.z, ray.direction.z);
+
+    float tmin = max3(x.x, y.x, z.x);
+    float tmax = min3(x.y, y.y, z.y);
+
+    if (tmin <= tmax){
+        hits.add(tmin, index);
+        hits.add(tmax, index);
     }
 }

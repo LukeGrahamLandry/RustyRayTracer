@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use glam::{Mat4, Vec3, vec3, Vec3A, vec3a, Vec4, vec4};
+use glam::{Mat4, Vec3, vec3, Vec3A, vec3a, Vec4};
 use yaml_rust::{ScanError, Yaml, YamlLoader};
 use yaml_rust::yaml::{Array, Hash};
 use crate::bindings::{Camera, PatternType, Shape, ShapeType};
@@ -12,19 +12,21 @@ pub const SCENE_FILES: &[&str] = &[
     include_str!("../scenes/puppets.yml"),
     include_str!("../scenes/metal.yml"),
     include_str!("../scenes/reflect-refract.yml"),
-    include_str!("../scenes/air-bubble.yml")
+    include_str!("../scenes/air-bubble.yml"),
+    include_str!("../scenes/table.yml"),
+    include_str!("../scenes/cover.yml")
 ];
 
 #[derive(Debug)]
 pub enum SceneParseErr {
     ScanFailed(ScanError),
-    InvalidCameraSize,
-    InvalidData
+    InvalidCameraSize
 }
 
+#[derive(Default)]
 struct ParseContext {
     world: World,
-    templates:  HashMap<String, Hash>
+    templates:  HashMap<String, Yaml>
 }
 
 // TODO: this would definitely be cleaner with serde but I find the systematic tediousness of doing it manually kinda pleasing.
@@ -32,10 +34,7 @@ struct ParseContext {
 /// Loads a scene description in the format used on https://forum.raytracerchallenge.com/board/4/gallery?q=scene+description
 pub fn load_scene(definition: &str) -> Result<World, SceneParseErr> {
     let data = YamlLoader::load_from_str(definition)?;
-    let mut ctx = ParseContext {
-        world: Default::default(),
-        templates: Default::default(),
-    };
+    let mut ctx = ParseContext::default();
 
     if let Yaml::Array(data) = &data[0] {
         for entry in data {
@@ -56,35 +55,65 @@ impl ParseContext {
             "light" => self.add_light(entry),
             "plane" => self.add_shape(entry, ShapeType::Plane),
             "sphere" => self.add_shape(entry, ShapeType::Sphere),
+            "cube" => self.add_shape(entry, ShapeType::Cube),
             &_ => {}
         }
     }
 
     fn handle_define(&mut self, name: &str, entry: &Hash) {
-        let data = entry.get_any("value").unwrap().as_hash().unwrap();
-        let result = match entry.get_any("extend") {
-            Some(Yaml::String(extend)) => {
-                let mut prev = self.templates.get(extend.as_str()).unwrap().clone();
-                for (key, value) in data {
-                    prev.insert(key.clone(), value.clone());
-                }
-                prev
-            }
-            _ => {
-                data.clone()
-            }
-        };
+        let mut result = entry.get_any("value").unwrap().clone();
+
+        if let Some(Yaml::String(extend)) = entry.get_any("extend") {
+            let current = &result.as_hash().expect("Only type=Hash can extend.");
+            result = Yaml::Hash(self.extend_hash_template(current, extend.as_str()))
+        }
+
+        if let Yaml::Array(current) = &result {
+            result = Yaml::Array(self.include_array_template(current));
+        }
+
         self.templates.insert(name.to_string(), result);
+    }
+
+    /// Merges values from current and template into a new Hash. When keys collide, current overrides template.
+    fn extend_hash_template(&self, current: &Hash, template_key: &str) -> Hash {
+        let prev = self.templates.get(template_key).unwrap();
+        let mut prev = prev.as_hash().expect("Hash can only extend type=Hash").clone();
+        for (key, value) in current {
+            prev.insert(key.clone(), value.clone());
+        }
+        prev
+    }
+
+    /// Checks the `current` for any string entries that are keys for templates. Returns a new Array with those templates evaluated.
+    fn include_array_template(&self, current: &Array) -> Array {
+        let mut expanded = vec![];
+        for value in current {
+            if let Yaml::String(key) = &value {  // if its a string it might be a template key
+                if let Some(prev) = self.templates.get(key.as_str()) {  // if it was a template key
+                    let prev = prev.as_vec().unwrap().clone();  // only arrays can be merged with arrays
+                    for value in prev {
+                        expanded.push(value);
+                    }
+                } else {  // it could just be an array of strings. then its ambiguous if one happens to be a template name tho.
+                    expanded.push(value.clone());
+                }
+            } else {
+                expanded.push(value.clone());
+            }
+        }
+
+        expanded
     }
 
     fn add_shape(&mut self, entry: &Hash, shape: ShapeType) {
         let mut shape = shape.create();
-        if let Some(m) = entry.get(&Yaml::String(String::from("material"))) {
+        if let Some(m) = entry.get_any("material") {
             let m = match m {
                 Yaml::Hash(m) => m,
                 Yaml::String(name) => match self.templates.get(name.as_str()) {
-                    None => panic!("Undefined material name: {:?}", m),
-                    Some(m) => m,
+                    Some(Yaml::Hash(m)) => m,
+                    _ => panic!("Undefined material name: {:?}", m),
                 },
                 _ => panic!("Invalid material value: {:?}", m),
             }.clone();
@@ -92,7 +121,13 @@ impl ParseContext {
             self.parse_material(&m, &mut shape);
         }
 
-        entry.if_transform(|t| shape.set_transform(t));
+        if let Some(&Yaml::Boolean(shadow)) = entry.get_any("shadow") {
+            if shadow {
+                // TODO: let shapes opt out of casting shadows.
+            }
+        }
+
+        self.if_transform(entry, |t| shape.set_transform(t));
         self.world.add_shape(shape);
     }
 
@@ -111,8 +146,25 @@ impl ParseContext {
         let mut pattern = get_pattern_type(&p_obj.get_str("type")).create();
         pattern.a = to_colour(data[0].as_vec().unwrap());
         pattern.b = to_colour(data[1].as_vec().unwrap());
-        p_obj.if_transform(|t| pattern.set_transform(t));
+        self.if_transform(p_obj, |t| pattern.set_transform(t));
         shape.material.pattern_index = self.world.add_pattern(pattern);
+    }
+
+    fn if_transform(&self, obj: &Hash, action: impl FnOnce(Mat4)) {
+        if let Some(Yaml::Array(t)) = obj.get_any("transform") {
+            action(self.parse_transform(&t));
+        }
+    }
+
+    // unlike material templates, the transformation lists on shapes sometimes use a template but add extra in place,
+    // so this always checks if there are any templates to expand.
+    fn parse_transform(&self, t: &Array) -> Mat4 {
+        let t = self.include_array_template(t);
+        let mut transform = Mat4::IDENTITY;
+        for part in t {
+            transform = to_mat(&part) * transform;
+        }
+        transform
     }
 
     fn add_light(&mut self, entry: &Hash) {
@@ -153,7 +205,6 @@ trait AssertMap<'a> {
     fn get_str(self, key: &str) -> String;
     fn if_f32(self, key: &str, action: impl FnMut(f32));
     fn if_colour(self, key: &str, action: impl FnMut(Vec3A));
-    fn if_transform(self, action: impl FnMut(Mat4));
 }
 
 impl<'a> AssertMap<'a> for &'a Hash {
@@ -212,16 +263,6 @@ impl<'a> AssertMap<'a> for &'a Hash {
     fn if_colour(self, key: &str, mut action: impl FnMut(Vec3A)) {
         if let Some(Yaml::Array(data)) = self.get_any(key) {
             action(vec3a(to_f32(&data[0]), to_f32(&data[1]), to_f32(&data[2])))
-        }
-    }
-
-    fn if_transform(self, mut action: impl FnMut(Mat4)) {
-        if let Some(t) = self.get_any("transform") {
-            let mut transform = Mat4::IDENTITY;
-            for part in t.as_vec().unwrap() {
-                transform = to_mat(part) * transform;
-            }
-            action(transform);
         }
     }
 }

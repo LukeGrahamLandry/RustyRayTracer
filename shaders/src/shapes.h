@@ -8,6 +8,7 @@
 typedef enum ShapeType {
     Sphere,
     Plane,
+    Cube
 } ShapeType;
 
 typedef struct Shape {
@@ -20,6 +21,7 @@ typedef struct Shape {
     void intersect(const thread Ray& world_ray, thread Intersections& hits) const;
     void local_intersect_sphere(const thread Ray& object_ray, thread Intersections& hits) const;
     void local_intersect_plane(const thread Ray& object_ray, thread Intersections& hits) const;
+    void local_intersect_cube(const thread Ray& object_ray, thread Intersections& hits) const;
 } Shape;
 
 #endif
